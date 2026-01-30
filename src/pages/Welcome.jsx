@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import usePageTitle from '../hooks/usePageTitle';
 import { CheckCircle, PartyPopper, Download, ArrowRight, Sparkles } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import confetti from 'canvas-confetti';
 
 const Welcome = () => {
+  usePageTitle('Willkommen');
   const { user } = useAuth();
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     // Trigger confetti
     const duration = 3 * 1000;
     const animationEnd = Date.now() + duration;
@@ -20,6 +24,8 @@ const Welcome = () => {
     }
 
     const interval = setInterval(function() {
+      if (!isMounted) return;
+
       const timeLeft = animationEnd - Date.now();
 
       if (timeLeft <= 0) {
@@ -42,9 +48,14 @@ const Welcome = () => {
       });
     }, 250);
 
-    setTimeout(() => setShowContent(true), 500);
+    setTimeout(() => {
+      if (isMounted) setShowContent(true);
+    }, 500);
 
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   // Zertifikat als PDF herunterladen

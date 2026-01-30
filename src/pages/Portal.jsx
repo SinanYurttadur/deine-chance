@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import usePageTitle from '../hooks/usePageTitle';
 import { templates } from '../data/communityData';
 import KnowledgeSection from '../components/KnowledgeSection';
 import CommunitySection from '../components/CommunitySection';
@@ -208,6 +209,7 @@ const DocumentsSection = () => {
 };
 
 const Portal = () => {
+  usePageTitle('Mein Portal');
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -422,9 +424,11 @@ const Portal = () => {
                 <Menu className="w-6 h-6" />
               </button>
               <div className="relative hidden sm:block">
+                <label htmlFor="portal-search" className="sr-only">Suche</label>
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type="text"
+                  id="portal-search"
+                  type="search"
                   placeholder="Jobs, Dokumente suchen..."
                   className="pl-10 pr-4 py-2 w-64 lg:w-96 border border-gray-200 rounded-xl focus:outline-none focus:border-swiss-red"
                 />
@@ -778,6 +782,7 @@ const Portal = () => {
                       frameBorder="0"
                       allow="encrypted-media; fullscreen"
                       allowFullScreen
+                      loading="lazy"
                       className="w-full h-full"
                     />
                   </div>
@@ -799,6 +804,7 @@ const Portal = () => {
                         frameBorder="0"
                         allow="encrypted-media; fullscreen"
                         allowFullScreen
+                        loading="lazy"
                         className="w-full h-full"
                       />
                       <div className="absolute top-3 left-3 pointer-events-none">
@@ -825,6 +831,7 @@ const Portal = () => {
                         frameBorder="0"
                         allow="encrypted-media; fullscreen"
                         allowFullScreen
+                        loading="lazy"
                         className="w-full h-full"
                       />
                       <div className="absolute top-3 left-3 pointer-events-none">
@@ -851,6 +858,7 @@ const Portal = () => {
                         frameBorder="0"
                         allow="encrypted-media; fullscreen"
                         allowFullScreen
+                        loading="lazy"
                         className="w-full h-full"
                       />
                       <div className="absolute top-3 left-3 pointer-events-none">
@@ -877,6 +885,7 @@ const Portal = () => {
                         frameBorder="0"
                         allow="encrypted-media; fullscreen"
                         allowFullScreen
+                        loading="lazy"
                         className="w-full h-full"
                       />
                       <div className="absolute top-3 left-3 pointer-events-none">
@@ -903,6 +912,7 @@ const Portal = () => {
                         frameBorder="0"
                         allow="encrypted-media; fullscreen"
                         allowFullScreen
+                        loading="lazy"
                         className="w-full h-full"
                       />
                       <div className="absolute top-3 left-3 pointer-events-none">
@@ -929,6 +939,7 @@ const Portal = () => {
                         frameBorder="0"
                         allow="encrypted-media; fullscreen"
                         allowFullScreen
+                        loading="lazy"
                         className="w-full h-full"
                       />
                       <div className="absolute top-3 left-3 pointer-events-none">
@@ -1005,6 +1016,7 @@ const Portal = () => {
                         frameBorder="0"
                         allow="encrypted-media; fullscreen"
                         allowFullScreen
+                        loading="lazy"
                         className="w-full h-full"
                       />
                     </div>
@@ -1028,6 +1040,7 @@ const Portal = () => {
                         frameBorder="0"
                         allow="encrypted-media; fullscreen"
                         allowFullScreen
+                        loading="lazy"
                         className="w-full h-full"
                       />
                     </div>
@@ -1051,6 +1064,7 @@ const Portal = () => {
                         frameBorder="0"
                         allow="encrypted-media; fullscreen"
                         allowFullScreen
+                        loading="lazy"
                         className="w-full h-full"
                       />
                     </div>

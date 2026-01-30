@@ -30,6 +30,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
+import NotFound from './pages/NotFound';
 
 // Landing Page Component
 const LandingPage = () => {
@@ -39,7 +40,7 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <main>
+      <main id="main-content">
         <Hero />
         <Process />
         <FounderStory />
@@ -123,6 +124,9 @@ function App() {
               <Cancel />
             </ProtectedRoute>
           } />
+
+          {/* 404 Catch-All */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
         </Router>
       </PersonaProvider>

@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
+import usePageTitle from '../hooks/usePageTitle';
 import { ArrowLeft, FileText, Shield, Euro, Building2 } from 'lucide-react';
 
 const Legal = () => {
+  usePageTitle('Rechtliches');
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import usePageTitle from '../hooks/usePageTitle';
 import {
   ArrowLeft,
   AlertTriangle,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 
 const Cancel = () => {
+  usePageTitle('Mitgliedschaft kündigen');
   const navigate = useNavigate();
   const { user, cancelMembership } = useAuth();
   const [step, setStep] = useState(1);

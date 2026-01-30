@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import usePageTitle from '../hooks/usePageTitle';
 import { User, Mail, Lock, Phone, MapPin, Briefcase, ArrowRight, ArrowLeft, CheckCircle, Shield, MailCheck } from 'lucide-react';
 
 const Register = () => {
+  usePageTitle('Registrieren');
   const navigate = useNavigate();
   const { register, savePendingRegistration } = useAuth();
   const [step, setStep] = useState(1);
@@ -236,6 +238,7 @@ const Register = () => {
                       <input
                         type="text"
                         name="firstName"
+                        autoComplete="given-name"
                         value={formData.firstName}
                         onChange={handleChange}
                         className={`w-full pl-10 pr-4 py-3 rounded-xl border ${errors.firstName ? 'border-red-500' : 'border-gray-200'} focus:border-swiss-red focus:ring-2 focus:ring-swiss-red/20 outline-none transition-all`}
@@ -251,6 +254,7 @@ const Register = () => {
                     <input
                       type="text"
                       name="lastName"
+                      autoComplete="family-name"
                       value={formData.lastName}
                       onChange={handleChange}
                       className={`w-full px-4 py-3 rounded-xl border ${errors.lastName ? 'border-red-500' : 'border-gray-200'} focus:border-swiss-red focus:ring-2 focus:ring-swiss-red/20 outline-none transition-all`}
@@ -270,6 +274,7 @@ const Register = () => {
                     <input
                       type="email"
                       name="email"
+                      autoComplete="email"
                       value={formData.email}
                       onChange={handleChange}
                       className={`w-full pl-10 pr-4 py-3 rounded-xl border ${errors.email ? 'border-red-500' : 'border-gray-200'} focus:border-swiss-red focus:ring-2 focus:ring-swiss-red/20 outline-none transition-all`}
@@ -289,6 +294,7 @@ const Register = () => {
                     <input
                       type="password"
                       name="password"
+                      autoComplete="new-password"
                       value={formData.password}
                       onChange={handleChange}
                       className={`w-full pl-10 pr-4 py-3 rounded-xl border ${errors.password ? 'border-red-500' : 'border-gray-200'} focus:border-swiss-red focus:ring-2 focus:ring-swiss-red/20 outline-none transition-all`}
@@ -308,6 +314,7 @@ const Register = () => {
                     <input
                       type="password"
                       name="passwordConfirm"
+                      autoComplete="new-password"
                       value={formData.passwordConfirm}
                       onChange={handleChange}
                       className={`w-full pl-10 pr-4 py-3 rounded-xl border ${errors.passwordConfirm ? 'border-red-500' : 'border-gray-200'} focus:border-swiss-red focus:ring-2 focus:ring-swiss-red/20 outline-none transition-all`}
@@ -340,6 +347,7 @@ const Register = () => {
                     <input
                       type="tel"
                       name="phone"
+                      autoComplete="tel"
                       value={formData.phone}
                       onChange={handleChange}
                       className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-swiss-red focus:ring-2 focus:ring-swiss-red/20 outline-none transition-all"

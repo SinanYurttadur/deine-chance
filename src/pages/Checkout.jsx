@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { isStripeConfigured, MEMBERSHIP_PRODUCT } from '../lib/stripe';
+import usePageTitle from '../hooks/usePageTitle';
 import {
   CreditCard,
   Building2,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 const Checkout = () => {
+  usePageTitle('Checkout');
   const navigate = useNavigate();
   const { user, profile, isLoading, getPendingRegistration } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);

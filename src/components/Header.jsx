@@ -33,6 +33,9 @@ const Header = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm shadow-sm z-50">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-swiss-red focus:text-white focus:px-4 focus:py-2 focus:rounded-lg">
+        Zum Inhalt springen
+      </a>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo mit Schweizer Kreuz */}
@@ -143,7 +146,8 @@ const Header = () => {
           <button
             className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Menü öffnen"
+            aria-label={isMenuOpen ? 'Menü schließen' : 'Menü öffnen'}
+            aria-expanded={isMenuOpen}
           >
             {isMenuOpen ? (
               <X className="w-6 h-6 text-gray-900" />

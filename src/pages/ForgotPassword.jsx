@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import usePageTitle from '../hooks/usePageTitle';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 
 const ForgotPassword = () => {
+  usePageTitle('Passwort vergessen');
   const { resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
