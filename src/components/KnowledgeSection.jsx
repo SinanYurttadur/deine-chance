@@ -395,9 +395,13 @@ const KnowledgeSection = ({ setActiveTab }) => {
   const [activePhase, setActivePhase] = useState('decision');
   const [expandedChapter, setExpandedChapter] = useState(null);
   const [completedChapters, setCompletedChapters] = useState(() => {
-    // Load from localStorage on initial render
-    const saved = localStorage.getItem('dc_completed_chapters');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('dc_completed_chapters');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      localStorage.removeItem('dc_completed_chapters');
+      return [];
+    }
   });
 
   // Persist to localStorage whenever completedChapters changes

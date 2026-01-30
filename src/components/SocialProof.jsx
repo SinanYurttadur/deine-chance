@@ -67,26 +67,6 @@ const SocialProof = () => {
           })}
         </div>
 
-        {/* Trust Badges */}
-        <div className="mt-16 pt-12 border-t border-white/10">
-          <p className="text-center text-gray-400 text-sm mb-8">
-            Vertraut von Hunderten zufriedener Mitglieder
-          </p>
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 opacity-60">
-            {/* Placeholder company logos */}
-            {['TrustPilot', 'Google Reviews', 'ProvenExpert', 'Ausgezeichnet.org'].map((name, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
-              >
-                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                  <span className="text-xs font-bold">{name.charAt(0)}</span>
-                </div>
-                <span className="text-sm font-medium hidden md:block">{name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </section>
   );

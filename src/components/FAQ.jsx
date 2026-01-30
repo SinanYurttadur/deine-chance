@@ -102,18 +102,6 @@ const FAQ = () => {
           ))}
         </div>
 
-        {/* Contact CTA */}
-        <div className="mt-12 text-center">
-          <div className="inline-flex items-center gap-3 bg-gray-50 rounded-full px-6 py-4">
-            <HelpCircle className="w-6 h-6 text-swiss-red" />
-            <span className="text-gray-700">
-              Noch Fragen?{' '}
-              <a href="mailto:info@deinechance.ch" className="text-swiss-red font-semibold hover:underline">
-                Schreib uns!
-              </a>
-            </span>
-          </div>
-        </div>
       </div>
     </section>
   );

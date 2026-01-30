@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Lock, Phone, MapPin, Briefcase, ArrowRight, ArrowLeft, CheckCircle, Shield } from 'lucide-react';
+import { User, Mail, Lock, Phone, MapPin, Briefcase, ArrowRight, ArrowLeft, CheckCircle, Shield, MailCheck } from 'lucide-react';
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, savePendingRegistration } = useAuth();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -45,8 +46,10 @@ const Register = () => {
     }
     if (!formData.password) {
       newErrors.password = 'Passwort ist erforderlich';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Passwort muss mindestens 6 Zeichen haben';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Passwort muss mindestens 8 Zeichen haben';
+    } else if (!/[A-Z]/.test(formData.password) || !/[0-9]/.test(formData.password)) {
+      newErrors.password = 'Passwort muss mindestens einen Großbuchstaben und eine Zahl enthalten';
     }
     if (formData.password !== formData.passwordConfirm) {
       newErrors.passwordConfirm = 'Passwörter stimmen nicht überein';
@@ -77,29 +80,91 @@ const Register = () => {
     if (!validateStep2()) return;
 
     setIsSubmitting(true);
+    setErrors({});
 
     try {
-      // Register user (pending status until payment)
-      const newUser = register({
+      // Speichere zuerst Daten für Checkout (bevor Auth call)
+      savePendingRegistration({
+        email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phone,
         currentCountry: formData.currentCountry,
         profession: formData.profession,
         newsletter: formData.acceptNewsletter
       });
 
-      // Navigate to checkout
-      setTimeout(() => {
+      // Register user with Supabase
+      const result = await register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone
+      });
+
+      if (!result.success) {
+        // Deutsche Fehlermeldungen
+        let errorMessage = result.error || 'Registrierung fehlgeschlagen';
+        if (result.error?.includes('already registered')) {
+          errorMessage = 'Diese E-Mail-Adresse ist bereits registriert';
+        } else if (result.error?.includes('Password should be')) {
+          errorMessage = 'Das Passwort muss mindestens 6 Zeichen haben';
+        }
+        setErrors({ submit: errorMessage });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Wenn Email-Bestätigung erforderlich
+      if (result.needsEmailConfirmation) {
+        setEmailSent(true);
+        setIsSubmitting(false);
+      } else {
+        // Email-Bestätigung deaktiviert - direkt zum Checkout
+        // Warte kurz damit Auth-State sich aktualisiert
         navigate('/checkout');
-      }, 500);
-    } catch (error) {
-      setErrors({ submit: 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.' });
+      }
+    } catch (err) {
+      setErrors({ submit: err.message || 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.' });
       setIsSubmitting(false);
     }
   };
+
+  // Email-Bestätigungs-Screen
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center py-12 px-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-3xl shadow-xl p-8 md:p-10 text-center">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <MailCheck className="w-10 h-10 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-3">
+              Bestätige deine E-Mail
+            </h1>
+            <p className="text-gray-600 mb-6">
+              Wir haben dir eine E-Mail an <strong>{formData.email}</strong> gesendet.
+              Klicke auf den Link in der E-Mail, um dein Konto zu bestätigen.
+            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+              <p className="text-amber-800 text-sm">
+                <strong>Tipp:</strong> Schau auch in deinem Spam-Ordner nach, falls du keine E-Mail findest.
+              </p>
+            </div>
+            <p className="text-gray-500 text-sm mb-6">
+              Nach der Bestätigung wirst du automatisch zum Checkout weitergeleitet.
+            </p>
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center gap-2 w-full bg-swiss-red hover:bg-swiss-red-dark text-white px-6 py-4 rounded-xl font-semibold transition-colors"
+            >
+              Zum Login
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center py-12 px-4">
@@ -138,10 +203,15 @@ const Register = () => {
 
         {/* Form Card */}
         <div className="bg-white rounded-3xl shadow-xl p-8 md:p-10">
-          {/* Logo */}
+          {/* Logo mit Schweizer Kreuz */}
           <div className="flex justify-center mb-6">
-            <div className="w-14 h-14 bg-swiss-red rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-xl">DC</span>
+            <div className="w-14 h-14 bg-swiss-red rounded-xl flex items-center justify-center relative">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-2.5 h-6 bg-white rounded-[1px]" />
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-6 h-2.5 bg-white rounded-[1px]" />
+              </div>
             </div>
           </div>
 
@@ -222,7 +292,7 @@ const Register = () => {
                       value={formData.password}
                       onChange={handleChange}
                       className={`w-full pl-10 pr-4 py-3 rounded-xl border ${errors.password ? 'border-red-500' : 'border-gray-200'} focus:border-swiss-red focus:ring-2 focus:ring-swiss-red/20 outline-none transition-all`}
-                      placeholder="Mindestens 6 Zeichen"
+                      placeholder="Mind. 8 Zeichen, Großbuchstabe + Zahl"
                     />
                   </div>
                   {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}

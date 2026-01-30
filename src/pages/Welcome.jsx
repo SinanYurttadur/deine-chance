@@ -1,20 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { CheckCircle, PartyPopper, Download, ArrowRight, Sparkles } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 import confetti from 'canvas-confetti';
 
 const Welcome = () => {
-  const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
     // Trigger confetti
     const duration = 3 * 1000;
     const animationEnd = Date.now() + duration;
@@ -50,9 +45,114 @@ const Welcome = () => {
     setTimeout(() => setShowContent(true), 500);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated, navigate]);
+  }, []);
 
-  if (!user) return null;
+  // Zertifikat als PDF herunterladen
+  const downloadCertificate = () => {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const width = doc.internal.pageSize.getWidth();
+    const height = doc.internal.pageSize.getHeight();
+
+    // Hintergrund
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, width, height, 'F');
+
+    // Roter Rahmen
+    doc.setDrawColor(220, 38, 38);
+    doc.setLineWidth(3);
+    doc.rect(10, 10, width - 20, height - 20);
+
+    // Innerer Rahmen
+    doc.setDrawColor(220, 38, 38);
+    doc.setLineWidth(0.5);
+    doc.rect(15, 15, width - 30, height - 30);
+
+    // Logo/Badge - Schweizer Flagge
+    doc.setFillColor(220, 38, 38);
+    doc.roundedRect(width / 2 - 15, 25, 30, 30, 3, 3, 'F');
+    // Weißes Kreuz
+    doc.setFillColor(255, 255, 255);
+    doc.rect(width / 2 - 2.5, 30, 5, 20, 'F');
+    doc.rect(width / 2 - 10, 37.5, 20, 5, 'F');
+
+    // Titel
+    doc.setTextColor(220, 38, 38);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
+    doc.text('DEINE CHANCE E.V.', width / 2, 65, { align: 'center' });
+
+    // Zertifikat Titel
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(32);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MITGLIEDSCHAFTSZERTIFIKAT', width / 2, 85, { align: 'center' });
+
+    // Linie
+    doc.setDrawColor(220, 38, 38);
+    doc.setLineWidth(1);
+    doc.line(width / 2 - 60, 92, width / 2 + 60, 92);
+
+    // Text
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Hiermit bestätigen wir, dass', width / 2, 108, { align: 'center' });
+
+    // Name
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(28);
+    doc.setFont('helvetica', 'bold');
+    const fullName = `${user.firstName || user.first_name || ''} ${user.lastName || user.last_name || ''}`;
+    doc.text(fullName, width / 2, 125, { align: 'center' });
+
+    // Mitglied Text
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('ordentliches Mitglied des Vereins Deine Chance e.V. ist.', width / 2, 138, { align: 'center' });
+
+    // Mitgliedsnummer
+    doc.setTextColor(220, 38, 38);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Mitgliedsnummer: ${user.certificateNumber || user.certificate_number || 'DC-2025-XXXXX'}`, width / 2, 152, { align: 'center' });
+
+    // Datum
+    const memberSince = user.accessGrantedAt || user.access_granted_at || user.paid_at || new Date().toISOString();
+    const dateStr = new Date(memberSince).toLocaleDateString('de-DE', { year: 'numeric', month: 'long', day: 'numeric' });
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Mitglied seit: ${dateStr}`, width / 2, 162, { align: 'center' });
+
+    // Standorte
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Stuttgart, Deutschland  •  Zürich, Schweiz', width / 2, height - 25, { align: 'center' });
+
+    // PDF speichern
+    doc.save(`Zertifikat_${user.firstName || user.first_name}_${user.lastName || user.last_name}_DeineChance.pdf`);
+  };
+
+  // Formatiere Datum sicher
+  const getMemberDate = () => {
+    const dateValue = user.accessGrantedAt || user.access_granted_at || user.paid_at;
+    if (!dateValue) return new Date().toLocaleDateString('de-DE');
+    const date = new Date(dateValue);
+    // Check if date is valid and not 1970
+    if (isNaN(date.getTime()) || date.getFullYear() < 2000) {
+      return new Date().toLocaleDateString('de-DE');
+    }
+    return date.toLocaleDateString('de-DE');
+  };
+
+  // Mitgliedsnummer
+  const memberNumber = user.certificateNumber || user.certificate_number || 'Wird generiert...';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-red-50 flex items-center justify-center py-12 px-4">
@@ -91,8 +191,13 @@ const Welcome = () => {
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-swiss-red rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold">DC</span>
+                  <div className="w-10 h-10 bg-swiss-red rounded-lg flex items-center justify-center relative">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-2 h-5 bg-white rounded-[1px]" />
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-5 h-2 bg-white rounded-[1px]" />
+                    </div>
                   </div>
                   <span className="font-semibold">Deine Chance e.V.</span>
                 </div>
@@ -110,11 +215,11 @@ const Welcome = () => {
               <div className="flex justify-between items-end mt-6">
                 <div>
                   <p className="text-gray-400 text-xs">Mitgliedsnummer</p>
-                  <p className="font-mono">{user.certificateNumber}</p>
+                  <p className="font-mono">{memberNumber}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-gray-400 text-xs">Gültig ab</p>
-                  <p className="font-mono">{new Date(user.accessGrantedAt).toLocaleDateString('de-DE')}</p>
+                  <p className="font-mono">{getMemberDate()}</p>
                 </div>
               </div>
             </div>
@@ -146,7 +251,10 @@ const Welcome = () => {
               <ArrowRight className="w-5 h-5" />
             </Link>
 
-            <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2">
+            <button
+              onClick={downloadCertificate}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2"
+            >
               <Download className="w-5 h-5" />
               Zertifikat herunterladen (PDF)
             </button>

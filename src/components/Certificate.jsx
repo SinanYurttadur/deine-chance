@@ -83,8 +83,14 @@ const Certificate = () => {
                 <div className="relative text-center">
                   {/* Header */}
                   <div className="flex justify-center mb-4">
-                    <div className="w-16 h-16 bg-swiss-red rounded-full flex items-center justify-center">
-                      <span className="text-white font-bold text-xl">DC</span>
+                    <div className="w-16 h-16 bg-swiss-red rounded-full flex items-center justify-center relative">
+                      {/* Schweizer Kreuz */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-3 h-8 bg-white rounded-[1px]" />
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-8 h-3 bg-white rounded-[1px]" />
+                      </div>
                     </div>
                   </div>
 

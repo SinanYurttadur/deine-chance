@@ -168,11 +168,29 @@ const Legal = () => {
           <div className="prose prose-gray max-w-none">
             <p className="text-gray-500 mb-4">Angaben gemäß § 5 TMG:</p>
 
-            <div className="bg-gray-50 rounded-xl p-6 mb-6">
-              <p className="font-bold text-gray-900 text-lg">Deine Chance e.V.</p>
-              <p className="text-gray-600">Zettachring 12a</p>
-              <p className="text-gray-600">70567 Stuttgart</p>
-              <p className="text-gray-600">Deutschland</p>
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              {/* Vereinssitz Deutschland */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">🇩🇪</span>
+                  <span className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Vereinssitz</span>
+                </div>
+                <p className="font-bold text-gray-900 text-lg">Deine Chance e.V.</p>
+                <p className="text-gray-600">Zettachring 12a</p>
+                <p className="text-gray-600">70567 Stuttgart</p>
+                <p className="text-gray-600">Deutschland</p>
+              </div>
+
+              {/* Zweigstelle Schweiz */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">🇨🇭</span>
+                  <span className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Zweigstelle</span>
+                </div>
+                <p className="font-bold text-gray-900 text-lg">Deine Chance e.V.</p>
+                <p className="text-gray-600">Zürich</p>
+                <p className="text-gray-600">Schweiz</p>
+              </div>
             </div>
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">Vertreten durch:</h2>

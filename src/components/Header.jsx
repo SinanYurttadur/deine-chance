@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, User, ChevronDown, Users, Building2, Briefcase, UserCircle } from 'lucide-react';
+import { Menu, X, User, ChevronDown, Users, Building2, Briefcase, UserCircle, Calculator } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usePersona } from '../context/PersonaContext';
 
@@ -35,11 +35,17 @@ const Header = () => {
     <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm shadow-sm z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
+          {/* Logo mit Schweizer Kreuz */}
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-swiss-red rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">DC</span>
+              <div className="w-10 h-10 bg-swiss-red rounded-lg flex items-center justify-center relative">
+                {/* Schweizer Kreuz */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-2 h-5 bg-white rounded-[1px]" />
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-5 h-2 bg-white rounded-[1px]" />
+                </div>
               </div>
               <span className="font-bold text-lg md:text-xl text-gray-900 hidden sm:block">
                 Deine Chance e.V.
@@ -88,6 +94,12 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-6">
+            {!['selbststaendig', 'unternehmer'].includes(currentPersona) && (
+              <a href="#gehaltsrechner" className="flex items-center gap-1.5 text-swiss-red font-semibold text-sm hover:text-swiss-red-dark transition-colors">
+                <Calculator className="w-4 h-4" />
+                Gehaltsrechner
+              </a>
+            )}
             <a href="#prozess" className="text-gray-600 hover:text-swiss-red transition-colors font-medium text-sm">
               Wie es funktioniert
             </a>
@@ -96,9 +108,6 @@ const Header = () => {
             </a>
             <a href="#features" className="text-gray-600 hover:text-swiss-red transition-colors font-medium text-sm">
               Leistungen
-            </a>
-            <a href="#faq" className="text-gray-600 hover:text-swiss-red transition-colors font-medium text-sm">
-              FAQ
             </a>
           </nav>
 
@@ -174,6 +183,16 @@ const Header = () => {
             </div>
 
             <nav className="flex flex-col space-y-3">
+              {!['selbststaendig', 'unternehmer'].includes(currentPersona) && (
+                <a
+                  href="#gehaltsrechner"
+                  className="flex items-center gap-2 text-swiss-red font-semibold px-2 py-2 bg-red-50 rounded-lg"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Calculator className="w-5 h-5" />
+                  Gehaltsrechner
+                </a>
+              )}
               <a
                 href="#prozess"
                 className="text-gray-600 hover:text-swiss-red transition-colors font-medium px-2 py-2"
@@ -194,13 +213,6 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Leistungen
-              </a>
-              <a
-                href="#faq"
-                className="text-gray-600 hover:text-swiss-red transition-colors font-medium px-2 py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                FAQ
               </a>
               {isAuthenticated ? (
                 <Link

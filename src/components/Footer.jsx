@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
+import { Mail, MapPin, Calculator } from 'lucide-react';
+import { usePersona } from '../context/PersonaContext';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { currentPersona } = usePersona();
+  const showSalaryCalculator = !['selbststaendig', 'unternehmer'].includes(currentPersona);
 
   const footerLinks = {
     service: [
+      ...(showSalaryCalculator ? [{ label: 'Gehaltsrechner', href: '#gehaltsrechner', isAnchor: true, highlight: true }] : []),
       { label: 'Wie es funktioniert', href: '#prozess', isAnchor: true },
       { label: 'Leistungen', href: '#features', isAnchor: true },
       { label: 'Erfahrungen', href: '#testimonials', isAnchor: true },
@@ -19,16 +23,9 @@ const Footer = () => {
     ],
     support: [
       { label: 'FAQ', href: '#faq', isAnchor: true },
-      { label: 'Kontakt', href: 'mailto:deinechance@mail.de', isAnchor: true }
+      { label: 'Mitgliedschaft beenden', href: '/kuendigen' }
     ]
   };
-
-  const socialLinks = [
-    { icon: Facebook, href: '#', label: 'Facebook' },
-    { icon: Instagram, href: '#', label: 'Instagram' },
-    { icon: Linkedin, href: '#', label: 'LinkedIn' },
-    { icon: Youtube, href: '#', label: 'YouTube' }
-  ];
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -38,8 +35,14 @@ const Footer = () => {
           {/* Brand Column */}
           <div className="lg:col-span-1">
             <a href="#" className="flex items-center space-x-2 mb-6">
-              <div className="w-10 h-10 bg-swiss-red rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">DC</span>
+              <div className="w-10 h-10 bg-swiss-red rounded-lg flex items-center justify-center relative">
+                {/* Schweizer Kreuz */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-2 h-5 bg-white rounded-[1px]" />
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-5 h-2 bg-white rounded-[1px]" />
+                </div>
               </div>
               <span className="font-bold text-xl">Deine Chance e.V.</span>
             </a>
@@ -69,8 +72,13 @@ const Footer = () => {
                 <li key={index}>
                   <a
                     href={link.href}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className={`transition-colors ${
+                      link.highlight
+                        ? 'text-swiss-red hover:text-red-400 font-semibold flex items-center gap-2'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
                   >
+                    {link.highlight && <Calculator className="w-4 h-4" />}
                     {link.label}
                   </a>
                 </li>
@@ -95,39 +103,30 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Support & Newsletter */}
+          {/* Support */}
           <div>
             <h4 className="font-semibold text-lg mb-6">Support</h4>
-            <ul className="space-y-3 mb-8">
+            <ul className="space-y-3">
               {footerLinks.support.map((link, index) => (
                 <li key={index}>
-                  <a
-                    href={link.href}
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    {link.label}
-                  </a>
+                  {link.href.startsWith('/') ? (
+                    <Link
+                      to={link.href}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={link.href}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
-
-            {/* Social Links */}
-            <h4 className="font-semibold text-lg mb-4">Folge uns</h4>
-            <div className="flex gap-3">
-              {socialLinks.map((social, index) => {
-                const Icon = social.icon;
-                return (
-                  <a
-                    key={index}
-                    href={social.href}
-                    className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-swiss-red transition-colors"
-                    aria-label={social.label}
-                  >
-                    <Icon className="w-5 h-5" />
-                  </a>
-                );
-              })}
-            </div>
           </div>
         </div>
       </div>
@@ -141,7 +140,7 @@ const Footer = () => {
             </p>
             <div className="flex items-center gap-6">
               <span className="text-gray-500 text-sm">
-                Made with <span className="text-swiss-red">&#9829;</span> in der Schweiz
+                Made with <span className="text-swiss-red">&#9829;</span> in der Schweiz und Deutschland
               </span>
             </div>
           </div>

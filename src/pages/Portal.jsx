@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { communityChannels, templates, usefulLinks, samplePosts } from '../data/communityData';
+import { templates } from '../data/communityData';
 import KnowledgeSection from '../components/KnowledgeSection';
+import CommunitySection from '../components/CommunitySection';
+import SalaryCalculator from '../components/SalaryCalculator';
+import { jsPDF } from 'jspdf';
 import {
   LayoutDashboard,
   Briefcase,
@@ -27,11 +30,7 @@ import {
   Menu,
   X,
   BookOpen,
-  Send,
-  ThumbsUp,
-  Hash,
-  Link as LinkIcon,
-  PlusCircle
+  Calculator
 } from 'lucide-react';
 
 // Job Portals für die Schweiz
@@ -126,355 +125,6 @@ const getAllTemplates = () => {
 };
 
 
-// Community Section Component
-const CommunitySection = ({ user }) => {
-  const [activeChannel, setActiveChannel] = useState('allgemein');
-  const [activeSubTab, setActiveSubTab] = useState('forum');
-  const [newPostTitle, setNewPostTitle] = useState('');
-  const [newPostContent, setNewPostContent] = useState('');
-  const [posts, setPosts] = useState(samplePosts);
-  const [expandedPost, setExpandedPost] = useState(null);
-  const [replyContent, setReplyContent] = useState('');
-
-  const handleCreatePost = () => {
-    if (!newPostTitle.trim() || !newPostContent.trim()) return;
-
-    const newPost = {
-      id: Date.now(),
-      author: `${user.firstName} ${user.lastName?.charAt(0)}.`,
-      avatar: `${user.firstName?.charAt(0)}${user.lastName?.charAt(0)}`,
-      date: new Date().toISOString().split('T')[0],
-      title: newPostTitle,
-      content: newPostContent,
-      likes: 0,
-      replies: []
-    };
-
-    setPosts(prev => ({
-      ...prev,
-      [activeChannel]: [newPost, ...(prev[activeChannel] || [])]
-    }));
-    setNewPostTitle('');
-    setNewPostContent('');
-  };
-
-  const handleAddReply = (postId) => {
-    if (!replyContent.trim()) return;
-
-    setPosts(prev => ({
-      ...prev,
-      [activeChannel]: prev[activeChannel].map(post =>
-        post.id === postId ? {
-          ...post,
-          replies: [...post.replies, {
-            author: `${user.firstName} ${user.lastName?.charAt(0)}.`,
-            avatar: `${user.firstName?.charAt(0)}${user.lastName?.charAt(0)}`,
-            content: replyContent,
-            date: new Date().toISOString().split('T')[0]
-          }]
-        } : post
-      )
-    }));
-    setReplyContent('');
-  };
-
-  const handleLikePost = (postId) => {
-    setPosts(prev => ({
-      ...prev,
-      [activeChannel]: prev[activeChannel].map(post =>
-        post.id === postId ? { ...post, likes: post.likes + 1 } : post
-      )
-    }));
-  };
-
-  const downloadTemplate = (template) => {
-    const blob = new Blob([template.content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${template.id}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const currentChannel = communityChannels.find(c => c.id === activeChannel);
-  const currentPosts = posts[activeChannel] || [];
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Community</h1>
-        <p className="text-gray-600 mt-1">Vernetze dich, tausche Erfahrungen aus und erhalte Unterstützung.</p>
-      </div>
-
-      {/* Sub-Navigation */}
-      <div className="flex gap-2 border-b border-gray-200 pb-4">
-        {[
-          { id: 'forum', name: 'Forum', icon: MessageCircle },
-          { id: 'vorlagen', name: 'Vorlagen & Downloads', icon: Download },
-          { id: 'links', name: 'Nützliche Links', icon: LinkIcon }
-        ].map(tab => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveSubTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeSubTab === tab.id
-                  ? 'bg-swiss-red text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {tab.name}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Forum View */}
-      {activeSubTab === 'forum' && (
-        <div className="grid lg:grid-cols-4 gap-6">
-          {/* Channels Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Hash className="w-4 h-4" /> Kanäle
-              </h3>
-              <div className="space-y-1">
-                {communityChannels.map(channel => (
-                  <button
-                    key={channel.id}
-                    onClick={() => setActiveChannel(channel.id)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                      activeChannel === channel.id
-                        ? 'bg-swiss-red/10 text-swiss-red font-medium'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    <span className="mr-2">{channel.emoji}</span>
-                    {channel.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Channel Info */}
-            {currentChannel && (
-              <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 mt-4 border border-gray-100">
-                <div className={`w-10 h-10 ${currentChannel.color} rounded-lg flex items-center justify-center text-white text-xl mb-3`}>
-                  {currentChannel.emoji}
-                </div>
-                <h4 className="font-semibold text-gray-900">{currentChannel.name}</h4>
-                <p className="text-sm text-gray-600 mt-1">{currentChannel.description}</p>
-                <div className="mt-3 text-xs text-gray-500">
-                  <p className="italic">"{currentChannel.format}"</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-4">
-            {/* New Post Form */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <PlusCircle className="w-5 h-5 text-swiss-red" />
-                Neuen Beitrag erstellen
-              </h3>
-              <input
-                type="text"
-                placeholder="Titel deines Beitrags..."
-                value={newPostTitle}
-                onChange={(e) => setNewPostTitle(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg mb-3 focus:outline-none focus:border-swiss-red"
-              />
-              <textarea
-                placeholder="Was möchtest du teilen oder fragen?"
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg resize-none focus:outline-none focus:border-swiss-red"
-              />
-              <div className="flex justify-between items-center mt-3">
-                <span className="text-xs text-gray-500">in #{currentChannel?.name}</span>
-                <button
-                  onClick={handleCreatePost}
-                  disabled={!newPostTitle.trim() || !newPostContent.trim()}
-                  className="bg-swiss-red hover:bg-swiss-red-dark disabled:bg-gray-300 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                >
-                  <Send className="w-4 h-4" />
-                  Veröffentlichen
-                </button>
-              </div>
-            </div>
-
-            {/* Posts List */}
-            {currentPosts.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageCircle className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Noch keine Beiträge</h3>
-                <p className="text-gray-600 text-sm">Sei der/die Erste und starte eine Diskussion!</p>
-              </div>
-            ) : (
-              currentPosts.map(post => (
-                <div key={post.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 bg-swiss-red/10 rounded-full flex items-center justify-center text-swiss-red font-semibold flex-shrink-0">
-                        {post.avatar}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold text-gray-900">{post.author}</span>
-                          <span className="text-xs text-gray-400">{post.date}</span>
-                        </div>
-                        <h4 className="font-bold text-gray-900 text-lg mb-2">{post.title}</h4>
-                        <p className="text-gray-700">{post.content}</p>
-
-                        <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100">
-                          <button
-                            onClick={() => handleLikePost(post.id)}
-                            className="flex items-center gap-1 text-gray-500 hover:text-swiss-red transition-colors"
-                          >
-                            <ThumbsUp className="w-4 h-4" />
-                            <span className="text-sm">{post.likes}</span>
-                          </button>
-                          <button
-                            onClick={() => setExpandedPost(expandedPost === post.id ? null : post.id)}
-                            className="flex items-center gap-1 text-gray-500 hover:text-swiss-red transition-colors"
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                            <span className="text-sm">{post.replies.length} Antworten</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Replies Section */}
-                  {expandedPost === post.id && (
-                    <div className="bg-gray-50 border-t border-gray-100 p-6">
-                      {post.replies.map((reply, idx) => (
-                        <div key={idx} className="flex items-start gap-3 mb-4 last:mb-0">
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 text-xs font-semibold flex-shrink-0">
-                            {reply.avatar}
-                          </div>
-                          <div className="flex-1 bg-white rounded-lg p-3">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-gray-900 text-sm">{reply.author}</span>
-                              <span className="text-xs text-gray-400">{reply.date}</span>
-                            </div>
-                            <p className="text-gray-700 text-sm">{reply.content}</p>
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Reply Input */}
-                      <div className="flex gap-3 mt-4">
-                        <div className="w-8 h-8 bg-swiss-red/10 rounded-full flex items-center justify-center text-swiss-red text-xs font-semibold flex-shrink-0">
-                          {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
-                        </div>
-                        <div className="flex-1 flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="Antwort schreiben..."
-                            value={replyContent}
-                            onChange={(e) => setReplyContent(e.target.value)}
-                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-swiss-red"
-                          />
-                          <button
-                            onClick={() => handleAddReply(post.id)}
-                            className="bg-swiss-red text-white px-3 py-2 rounded-lg hover:bg-swiss-red-dark transition-colors"
-                          >
-                            <Send className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Templates View */}
-      {activeSubTab === 'vorlagen' && (
-        <div className="space-y-8">
-          {Object.values(templates).map(category => (
-            <div key={category.title}>
-              <h3 className="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
-                <span className="text-2xl">{category.emoji}</span>
-                {category.title}
-              </h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                {category.items.map(template => (
-                  <div key={template.id} className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-swiss-red/10 rounded-lg flex items-center justify-center">
-                          <FileText className="w-5 h-5 text-swiss-red" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{template.name}</h4>
-                          <p className="text-xs text-gray-500">{template.type} • {template.downloads.toLocaleString()} Downloads</p>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-4">{template.description}</p>
-                    <button
-                      onClick={() => downloadTemplate(template)}
-                      className="w-full bg-gray-100 hover:bg-swiss-red hover:text-white text-gray-700 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Download className="w-4 h-4" />
-                      Herunterladen
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Useful Links View */}
-      {activeSubTab === 'links' && (
-        <div className="space-y-8">
-          {usefulLinks.map(category => (
-            <div key={category.category}>
-              <h3 className="font-bold text-gray-900 text-lg mb-4">{category.category}</h3>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {category.links.map(link => (
-                  <a
-                    key={link.name}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 hover:shadow-md hover:border-swiss-red/30 transition-all group"
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-swiss-red/10 rounded-lg flex items-center justify-center group-hover:bg-swiss-red transition-colors">
-                        <ExternalLink className="w-4 h-4 text-swiss-red group-hover:text-white transition-colors" />
-                      </div>
-                      <h4 className="font-semibold text-gray-900 group-hover:text-swiss-red transition-colors">{link.name}</h4>
-                    </div>
-                    <p className="text-sm text-gray-600">{link.description}</p>
-                  </a>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
 // Documents Section Component
 const DocumentsSection = () => {
   const downloadTemplate = (template) => {
@@ -559,29 +209,114 @@ const DocumentsSection = () => {
 
 const Portal = () => {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, navigate]);
-
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
-  if (!user) return null;
+  // Zertifikat als PDF herunterladen
+  const downloadCertificate = () => {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const width = doc.internal.pageSize.getWidth();
+    const height = doc.internal.pageSize.getHeight();
+
+    // Hintergrund
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, width, height, 'F');
+
+    // Roter Rahmen
+    doc.setDrawColor(220, 38, 38);
+    doc.setLineWidth(3);
+    doc.rect(10, 10, width - 20, height - 20);
+
+    // Innerer Rahmen
+    doc.setDrawColor(220, 38, 38);
+    doc.setLineWidth(0.5);
+    doc.rect(15, 15, width - 30, height - 30);
+
+    // Logo/Badge - Schweizer Flagge
+    doc.setFillColor(220, 38, 38);
+    doc.roundedRect(width / 2 - 15, 25, 30, 30, 3, 3, 'F');
+    // Weißes Kreuz
+    doc.setFillColor(255, 255, 255);
+    doc.rect(width / 2 - 2.5, 30, 5, 20, 'F'); // Vertikaler Balken
+    doc.rect(width / 2 - 10, 37.5, 20, 5, 'F'); // Horizontaler Balken
+
+    // Titel
+    doc.setTextColor(220, 38, 38);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
+    doc.text('DEINE CHANCE E.V.', width / 2, 65, { align: 'center' });
+
+    // Zertifikat Titel
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(32);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MITGLIEDSCHAFTSZERTIFIKAT', width / 2, 85, { align: 'center' });
+
+    // Linie
+    doc.setDrawColor(220, 38, 38);
+    doc.setLineWidth(1);
+    doc.line(width / 2 - 60, 92, width / 2 + 60, 92);
+
+    // Text "Hiermit bestätigen wir"
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Hiermit bestätigen wir, dass', width / 2, 108, { align: 'center' });
+
+    // Name
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(28);
+    doc.setFont('helvetica', 'bold');
+    const fullName = `${user.firstName || user.first_name || ''} ${user.lastName || user.last_name || ''}`;
+    doc.text(fullName, width / 2, 125, { align: 'center' });
+
+    // Mitglied Text
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('ordentliches Mitglied des Vereins Deine Chance e.V. ist.', width / 2, 138, { align: 'center' });
+
+    // Mitgliedsnummer
+    doc.setTextColor(220, 38, 38);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Mitgliedsnummer: ${user.certificateNumber || user.certificate_number || 'DC-2024-XXXXX'}`, width / 2, 152, { align: 'center' });
+
+    // Datum
+    const memberSince = user.accessGrantedAt || user.access_granted_at || user.created_at;
+    const dateStr = memberSince ? new Date(memberSince).toLocaleDateString('de-DE', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date().toLocaleDateString('de-DE');
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Mitglied seit: ${dateStr}`, width / 2, 162, { align: 'center' });
+
+    // Standorte
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Stuttgart, Deutschland  •  Zürich, Schweiz', width / 2, height - 25, { align: 'center' });
+
+    // PDF speichern
+    doc.save(`Zertifikat_${user.firstName || user.first_name}_${user.lastName || user.last_name}_DeineChance.pdf`);
+  };
 
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { id: 'knowledge', name: 'Wissensbibliothek', icon: BookOpen, badge: '13' },
     { id: 'jobs', name: 'Stellenangebote', icon: Briefcase, badge: '523' },
+    { id: 'calculator', name: 'Gehaltsrechner', icon: Calculator, badge: 'Neu' },
     { id: 'documents', name: 'Dokumente', icon: FileText },
-    { id: 'community', name: 'Community', icon: Users, badge: 'Neu' },
+    { id: 'community', name: 'Community', icon: Users },
     { id: 'webinars', name: 'Videos', icon: Play },
     { id: 'settings', name: 'Einstellungen', icon: Settings }
   ];
@@ -601,8 +336,13 @@ const Portal = () => {
         <div className="p-6">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-swiss-red rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">DC</span>
+            <div className="w-10 h-10 bg-swiss-red rounded-lg flex items-center justify-center relative">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-2 h-5 bg-white rounded-[1px]" />
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-5 h-2 bg-white rounded-[1px]" />
+              </div>
             </div>
             <span className="font-bold text-lg">Deine Chance</span>
           </Link>
@@ -985,6 +725,11 @@ const Portal = () => {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Calculator Tab */}
+          {activeTab === 'calculator' && (
+            <SalaryCalculator />
           )}
 
           {/* Documents Tab */}
@@ -1378,7 +1123,10 @@ const Portal = () => {
 
                 <div className="p-6">
                   <h2 className="font-semibold text-gray-900 mb-4">Zertifikat</h2>
-                  <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+                  <button
+                    onClick={downloadCertificate}
+                    className="bg-swiss-red hover:bg-swiss-red-dark text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                  >
                     <Download className="w-4 h-4" />
                     Zertifikat herunterladen
                   </button>
