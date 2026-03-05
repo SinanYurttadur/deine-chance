@@ -183,15 +183,12 @@ export const AuthProvider = ({ children }) => {
   // Logout
   const logout = async () => {
     try {
-      setIsLoading(true);
       await supabase.auth.signOut();
-      setUser(null);
-      setProfile(null);
     } catch (err) {
       console.error('Logout fehlgeschlagen:', err);
-    } finally {
-      setIsLoading(false);
     }
+    setUser(null);
+    setProfile(null);
   };
 
   // Passwort zurücksetzen (Email senden)
