@@ -1,8 +1,10 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
 import { PersonaProvider, usePersona } from './context/PersonaContext';
 
-// Landing Page Components
+// Landing Page Components (above the fold – no lazy loading)
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Process from './components/Process';
@@ -18,19 +20,27 @@ import FAQ from './components/FAQ';
 import Footer from './components/Footer';
 import SalaryCalculatorCompact from './components/SalaryCalculatorCompact';
 
-// Pages
-import Register from './pages/Register';
-import Checkout from './pages/Checkout';
-import Login from './pages/Login';
-import Welcome from './pages/Welcome';
-import Portal from './pages/Portal';
-import Legal from './pages/Legal';
-import Cancel from './pages/Cancel';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
+// Pages – lazy loaded for better performance
+const Register = lazy(() => import('./pages/Register'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const Login = lazy(() => import('./pages/Login'));
+const Welcome = lazy(() => import('./pages/Welcome'));
+const Portal = lazy(() => import('./pages/Portal'));
+const Legal = lazy(() => import('./pages/Legal'));
+const Cancel = lazy(() => import('./pages/Cancel'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
-import NotFound from './pages/NotFound';
+
+// Loading fallback
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="w-8 h-8 border-4 border-swiss-red border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
 
 // Landing Page Component
 const LandingPage = () => {
@@ -39,6 +49,11 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <Helmet>
+        <title>Gehaltsrechner Schweiz | Auswandern & mehr verdienen | Deine Chance e.V.</title>
+        <meta name="description" content="Berechne kostenlos, was du in der Schweiz verdienen könntest. Gehaltsrechner mit Steuervergleich DE vs CH. Professionelle Auswanderer-Unterstützung für nur 249€." />
+        <link rel="canonical" href="https://deinechance24.org/" />
+      </Helmet>
       <Header />
       <main id="main-content">
         <Hero />
@@ -54,7 +69,7 @@ const LandingPage = () => {
                   Interaktiver Rechner
                 </span>
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                  Wieviel mehr könntest du verdienen?
+                  Gehalt Schweiz vs. Deutschland – wieviel mehr verdienst du?
                 </h2>
                 <p className="text-lg text-gray-600 max-w-2xl mx-auto">
                   Berechne in 10 Sekunden, was du in der Schweiz verdienen könntest – und wie viel mehr am Ende des Monats übrig bleibt.
@@ -85,6 +100,7 @@ function App() {
     <AuthProvider>
       <PersonaProvider>
         <Router>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Landing Page */}
           <Route path="/" element={<LandingPage />} />
@@ -102,7 +118,7 @@ function App() {
 
           {/* Post-Purchase (Auth + aktive Mitgliedschaft erforderlich) */}
           <Route path="/willkommen" element={
-            <ProtectedRoute>
+            <ProtectedRoute requireMembership>
               <Welcome />
             </ProtectedRoute>
           } />
@@ -128,6 +144,7 @@ function App() {
           {/* 404 Catch-All */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
         </Router>
       </PersonaProvider>
     </AuthProvider>

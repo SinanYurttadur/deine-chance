@@ -33,7 +33,7 @@ const Login = () => {
     setIsSubmitting(true);
     setError('');
 
-    const result = await login(formData.email, formData.password);
+    const result = await login(formData.email.trim(), formData.password);
 
     if (result.success) {
       navigate(redirectTo);

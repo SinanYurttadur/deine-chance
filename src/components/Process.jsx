@@ -123,10 +123,10 @@ const Process = () => {
             In 4 einfachen Schritten
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-            Wie funktioniert es?
+            In die Schweiz auswandern – so funktioniert es
           </h2>
           <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
-            Dein Weg in die Schweiz war noch nie so einfach. Folge unserem bewährten Prozess
+            Dein Weg zum Arbeiten in der Schweiz war noch nie so einfach. Folge unserem bewährten Prozess
             und starte noch heute in dein neues Leben.
           </p>
         </div>

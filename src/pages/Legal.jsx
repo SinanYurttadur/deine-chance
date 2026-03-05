@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import usePageTitle from '../hooks/usePageTitle';
 import { ArrowLeft, FileText, Shield, Euro, Building2 } from 'lucide-react';
 
@@ -6,6 +7,13 @@ const Legal = () => {
   usePageTitle('Rechtliches');
   return (
     <div className="min-h-screen bg-gray-50">
+      <Helmet>
+        <title>Rechtliches | AGB, Impressum & Datenschutz | Deine Chance e.V.</title>
+        <meta name="description" content="AGB, Impressum, Datenschutzerklärung und Beitragsordnung von Deine Chance e.V. - Verein zur Unterstützung von Auswanderern in die Schweiz." />
+        <meta property="og:title" content="Rechtliches | Deine Chance e.V." />
+        <meta property="og:description" content="AGB, Impressum, Datenschutzerklärung und Beitragsordnung von Deine Chance e.V." />
+        <link rel="canonical" href="https://deinechance24.org/legal" />
+      </Helmet>
       {/* Header */}
       <header className="bg-white border-b border-gray-100">
         <div className="max-w-4xl mx-auto px-4 py-6">
@@ -17,6 +25,7 @@ const Legal = () => {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-12">
+        <h1 className="text-4xl font-bold text-gray-900 mb-8">Rechtliches</h1>
         {/* Navigation Tabs */}
         <div className="flex flex-wrap gap-4 mb-12">
           <a href="#agb" className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
@@ -39,7 +48,7 @@ const Legal = () => {
 
         {/* AGB Section */}
         <section id="agb" className="bg-white rounded-2xl shadow-lg p-8 md:p-12 mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Allgemeine Geschäftsbedingungen</h1>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Allgemeine Geschäftsbedingungen</h2>
           <p className="text-gray-500 mb-8">für die Plattform von Deine Chance e.V. | Stand: 22.05.2025</p>
 
           <div className="prose prose-gray max-w-none">
@@ -109,7 +118,7 @@ const Legal = () => {
 
         {/* Beitragsordnung Section */}
         <section id="beitragsordnung" className="bg-white rounded-2xl shadow-lg p-8 md:p-12 mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Beitragsordnung</h1>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Beitragsordnung</h2>
           <p className="text-gray-500 mb-8">Deine Chance e.V.</p>
 
           <div className="prose prose-gray max-w-none">
@@ -147,8 +156,13 @@ const Legal = () => {
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">§5 Rückerstattung</h2>
             <p className="text-gray-600 mb-4">
-              Eine anteilige oder vollständige Rückerstattung des Mitgliedsbeitrags bei Austritt, Ausschluss oder
-              Nichtnutzung der Plattform ist ausgeschlossen.
+              Neue Mitglieder haben das Recht, innerhalb von 14 Tagen nach Beitritt ohne Angabe von Gründen vom
+              Vertrag zurückzutreten. In diesem Fall wird der gezahlte Mitgliedsbeitrag vollständig erstattet
+              (14-Tage-Geld-zurück-Garantie).
+            </p>
+            <p className="text-gray-600 mb-4">
+              Nach Ablauf der 14-tägigen Frist ist eine anteilige oder vollständige Rückerstattung des
+              Mitgliedsbeitrags bei Austritt, Ausschluss oder Nichtnutzung der Plattform ausgeschlossen.
             </p>
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">§6 Inkrafttreten</h2>
@@ -165,7 +179,7 @@ const Legal = () => {
 
         {/* Impressum Section */}
         <section id="impressum" className="bg-white rounded-2xl shadow-lg p-8 md:p-12 mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Impressum</h1>
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">Impressum</h2>
 
           <div className="prose prose-gray max-w-none">
             <p className="text-gray-500 mb-4">Angaben gemäß § 5 TMG:</p>
@@ -218,7 +232,7 @@ const Legal = () => {
 
         {/* Datenschutz Section */}
         <section id="datenschutz" className="bg-white rounded-2xl shadow-lg p-8 md:p-12">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Datenschutzerklärung</h1>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Datenschutzerklärung</h2>
           <p className="text-gray-500 mb-8">gemäß DSGVO | Gültig ab 01.05.2025</p>
 
           <div className="prose prose-gray max-w-none">

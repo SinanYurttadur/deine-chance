@@ -495,7 +495,6 @@ const KnowledgeSection = ({ setActiveTab }) => {
           {journeyPhases.map((phase, index) => {
             const isActive = activePhase === phase.id;
             const phaseCompleted = phase.chapters.every(c => completedChapters.includes(c.id));
-            const phaseStarted = phase.chapters.some(c => completedChapters.includes(c.id));
 
             return (
               <div key={phase.id} className="flex items-center">
@@ -586,7 +585,7 @@ const KnowledgeSection = ({ setActiveTab }) => {
 
           {/* Chapters */}
           <div className="lg:col-span-8 space-y-4">
-            {currentPhase.chapters.map((chapter, index) => {
+            {currentPhase.chapters.map((chapter) => {
               const Icon = chapter.icon;
               const isExpanded = expandedChapter === chapter.id;
               const isCompleted = completedChapters.includes(chapter.id);

@@ -90,7 +90,8 @@ export const AuthProvider = ({ children }) => {
             first_name: firstName,
             last_name: lastName,
             phone: phone
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/login`
         }
       });
 
@@ -123,7 +124,7 @@ export const AuthProvider = ({ children }) => {
               last_name: lastName,
               phone: phone,
               membership_status: 'pending',
-              certificate_number: `DC-${new Date().getFullYear()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`
+              certificate_number: `DC-${new Date().getFullYear()}-${crypto.getRandomValues(new Uint32Array(1))[0].toString(36).toUpperCase().slice(0, 7)}`
             });
 
           if (profileError && profileError.code !== '23505') {
@@ -221,52 +222,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Mitgliedschaft aktivieren (nach Zahlung)
-  // WICHTIG: In Produktion sollte die Aktivierung ausschließlich
-  // serverseitig (Stripe Webhook / Edge Function) erfolgen.
-  // Diese Client-Funktion ist nur für den Demo-Modus gedacht.
-  const activateMembership = async (paymentData) => {
+  // Mitgliedschaft-Status neu laden (nach serverseitiger Aktivierung via Webhook)
+  // WICHTIG: Die Aktivierung erfolgt ausschließlich serverseitig (Stripe Webhook).
+  // Diese Funktion lädt nur den aktuellen Status aus der Datenbank.
+  const refreshMembership = async () => {
     if (!user) return { success: false, error: 'Nicht eingeloggt' };
 
-    if (!paymentData?.sessionId && !paymentData?.demo) {
-      return { success: false, error: 'Keine gültige Zahlungsreferenz' };
-    }
-
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          membership_status: 'active',
-          paid_at: new Date().toISOString(),
-          paid_amount: paymentData.amount || 249,
-          access_granted_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
       const updatedProfile = await loadProfile(user.id);
       setProfile(updatedProfile);
-
-      return { success: true };
+      return { success: true, status: updatedProfile?.membership_status };
     } catch (err) {
       return { success: false, error: err.message };
     }
   };
 
-  // Mitgliedschaft kündigen
+  // Mitgliedschaft kündigen (über sichere RPC-Funktion)
   const cancelMembership = async (reason) => {
     if (!user) return { success: false, error: 'Nicht eingeloggt' };
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          membership_status: 'cancelled',
-          cancelled_at: new Date().toISOString(),
-          cancellation_reason: reason
-        })
-        .eq('id', user.id);
+      const { error } = await supabase.rpc('cancel_own_membership', {
+        p_reason: reason
+      });
 
       if (error) throw error;
 
@@ -330,7 +308,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     resetPassword,
     updatePassword,
-    activateMembership,
+    refreshMembership,
     cancelMembership,
     getPendingRegistration,
     savePendingRegistration,

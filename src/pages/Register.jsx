@@ -85,23 +85,15 @@ const Register = () => {
     setErrors({});
 
     try {
-      // Speichere zuerst Daten für Checkout (bevor Auth call)
-      savePendingRegistration({
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        currentCountry: formData.currentCountry,
-        profession: formData.profession,
-        newsletter: formData.acceptNewsletter
-      });
+      const trimmedEmail = formData.email.trim();
 
       // Register user with Supabase
       const result = await register({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: trimmedEmail,
         password: formData.password,
-        phone: formData.phone
+        phone: formData.phone.trim()
       });
 
       if (!result.success) {
@@ -110,20 +102,30 @@ const Register = () => {
         if (result.error?.includes('already registered')) {
           errorMessage = 'Diese E-Mail-Adresse ist bereits registriert';
         } else if (result.error?.includes('Password should be')) {
-          errorMessage = 'Das Passwort muss mindestens 6 Zeichen haben';
+          errorMessage = 'Das Passwort muss mindestens 8 Zeichen haben';
         }
         setErrors({ submit: errorMessage });
         setIsSubmitting(false);
         return;
       }
 
+      // Erst NACH erfolgreicher Registrierung pending-Daten speichern
+      savePendingRegistration({
+        email: trimmedEmail,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        currentCountry: formData.currentCountry,
+        profession: formData.profession,
+        newsletter: formData.acceptNewsletter
+      });
+
       // Wenn Email-Bestätigung erforderlich
       if (result.needsEmailConfirmation) {
         setEmailSent(true);
         setIsSubmitting(false);
       } else {
-        // Email-Bestätigung deaktiviert - direkt zum Checkout
-        // Warte kurz damit Auth-State sich aktualisiert
+        // Email-Bestätigung deaktiviert - kurz warten damit Auth-State sich aktualisiert
+        await new Promise(resolve => setTimeout(resolve, 100));
         navigate('/checkout');
       }
     } catch (err) {
@@ -154,7 +156,7 @@ const Register = () => {
               </p>
             </div>
             <p className="text-gray-500 text-sm mb-6">
-              Nach der Bestätigung wirst du automatisch zum Checkout weitergeleitet.
+              Nach der Bestätigung kannst du dich einloggen und zum Checkout fortfahren.
             </p>
             <Link
               to="/login"
@@ -410,9 +412,9 @@ const Register = () => {
                     />
                     <span className="text-sm text-gray-600">
                       Ich akzeptiere die{' '}
-                      <a href="/agb" className="text-swiss-red hover:underline">AGB</a>
+                      <Link to="/agb" target="_blank" className="text-swiss-red hover:underline">AGB</Link>
                       {' '}und{' '}
-                      <a href="/datenschutz" className="text-swiss-red hover:underline">Datenschutzerklärung</a> *
+                      <Link to="/datenschutz" target="_blank" className="text-swiss-red hover:underline">Datenschutzerklärung</Link> *
                     </span>
                   </label>
                   {errors.acceptTerms && <p className="text-red-500 text-sm">{errors.acceptTerms}</p>}

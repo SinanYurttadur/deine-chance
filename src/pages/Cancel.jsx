@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import usePageTitle from '../hooks/usePageTitle';
 import {
@@ -17,7 +17,6 @@ import {
 
 const Cancel = () => {
   usePageTitle('Mitgliedschaft kündigen');
-  const navigate = useNavigate();
   const { user, cancelMembership } = useAuth();
   const [step, setStep] = useState(1);
   const [reason, setReason] = useState('');
@@ -204,7 +203,7 @@ const Cancel = () => {
 
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8">
               <p className="text-amber-800 text-sm">
-                <strong>Hinweis:</strong> Gemäß unserer Beitragsordnung ist eine Rückerstattung des bereits gezahlten Beitrags nicht möglich.
+                <strong>Hinweis:</strong> Gemäß unserer Beitragsordnung §5 gilt: Innerhalb von 14 Tagen nach Beitritt ist eine volle Rückerstattung möglich. Nach Ablauf der 14-Tage-Frist ist eine Rückerstattung ausgeschlossen.
               </p>
             </div>
 
@@ -253,7 +252,7 @@ const Cancel = () => {
               />
               <span className="text-gray-700 text-sm">
                 Ich verstehe, dass meine Mitgliedschaft beendet wird und ich keinen Zugang mehr
-                zur Plattform, Community und allen Inhalten haben werde. Eine Rückerstattung ist nicht möglich.
+                zur Plattform, Community und allen Inhalten haben werde. Eine Rückerstattung ist nur innerhalb von 14 Tagen nach Beitritt möglich (siehe Beitragsordnung §5).
               </span>
             </label>
 

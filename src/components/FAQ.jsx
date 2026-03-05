@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { ChevronDown, HelpCircle } from 'lucide-react';
 
 const faqs = [
@@ -72,8 +73,24 @@ const FAQItem = ({ question, answer, isOpen, onClick }) => {
 const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(0);
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
+      }
+    }))
+  };
+
   return (
     <section id="faq" className="py-20 md:py-32 bg-white">
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+      </Helmet>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -81,7 +98,7 @@ const FAQ = () => {
             FAQ
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-            Häufige Fragen
+            Häufige Fragen zum Auswandern in die Schweiz
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Hier findest du Antworten auf die häufigsten Fragen. Hast du weitere Fragen?

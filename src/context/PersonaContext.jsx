@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 const PersonaContext = createContext(null);
 
@@ -286,15 +286,10 @@ export const personaContent = {
 };
 
 export const PersonaProvider = ({ children }) => {
-  const [currentPersona, setCurrentPersona] = useState('einzelperson');
-
-  // Persist persona selection
-  useEffect(() => {
+  const [currentPersona, setCurrentPersona] = useState(() => {
     const saved = localStorage.getItem('deinechance_persona');
-    if (saved && personaContent[saved]) {
-      setCurrentPersona(saved);
-    }
-  }, []);
+    return (saved && personaContent[saved]) ? saved : 'einzelperson';
+  });
 
   const switchPersona = (personaId) => {
     if (personaContent[personaId]) {

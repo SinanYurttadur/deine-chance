@@ -12,12 +12,7 @@ import {
   ExternalLink,
   FileText,
   Loader2,
-  AlertCircle,
-  Building2,
-  Users,
-  GraduationCap,
-  Trophy,
-  HelpCircle
+  AlertCircle
 } from 'lucide-react';
 
 // Icon ist jetzt ein Emoji aus der DB - kein Mapping mehr nötig
@@ -339,9 +334,7 @@ const CommunitySection = ({ user }) => {
                 <Hash className="w-4 h-4" /> Kanäle
               </h3>
               <div className="space-y-1">
-                {categories.map(category => {
-                  const IconComponent = categoryIcons[category.icon] || MessageCircle;
-                  return (
+                {categories.map(category => (
                     <button
                       key={category.id}
                       onClick={() => setActiveCategory(category)}
@@ -351,11 +344,10 @@ const CommunitySection = ({ user }) => {
                           : 'text-gray-600 hover:bg-gray-100'
                       }`}
                     >
-                      <IconComponent className="w-4 h-4" />
+                      <span className="text-base">{category.emoji || '💬'}</span>
                       {category.name}
                     </button>
-                  );
-                })}
+                  ))}
               </div>
             </div>
 

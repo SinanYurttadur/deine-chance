@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Allow: /legal
+Allow: /agb
+Allow: /impressum
+Allow: /datenschutz
+Disallow: /portal
+Disallow: /login
+Disallow: /register
+Disallow: /checkout
+Disallow: /willkommen
+Disallow: /kuendigen
+Disallow: /passwort-vergessen
+Disallow: /passwort-neu
+
+Sitemap: https://deinechance24.org/sitemap.xml

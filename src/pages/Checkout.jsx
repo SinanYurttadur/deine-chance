@@ -2,12 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { isStripeConfigured, MEMBERSHIP_PRODUCT } from '../lib/stripe';
+import { isStripeConfigured } from '../lib/stripe';
 import usePageTitle from '../hooks/usePageTitle';
 import {
   CreditCard,
-  Building2,
-  Wallet,
   ArrowLeft,
   Shield,
   Lock,
@@ -20,7 +18,7 @@ import {
 const Checkout = () => {
   usePageTitle('Checkout');
   const navigate = useNavigate();
-  const { user, profile, isLoading, getPendingRegistration } = useAuth();
+  const { user, profile, isLoading, getPendingRegistration, clearPendingRegistration, refreshMembership } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [pendingUser, setPendingUser] = useState(null);
@@ -47,20 +45,27 @@ const Checkout = () => {
     setError('');
 
     try {
-      // Supabase Edge Function aufrufen
-      const { data, error: fnError } = await supabase.functions.invoke('create-checkout', {
-        body: {
-          userId: user.id,
-          email: user.email,
-          successUrl: `${window.location.origin}/willkommen?session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/checkout`
-        }
+      if (!user?.id) {
+        throw new Error('Bitte melde dich zuerst an');
+      }
+
+      // Vercel Serverless Function aufrufen (URLs werden server-seitig definiert)
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
       });
 
-      if (fnError) throw fnError;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Checkout konnte nicht gestartet werden');
+      }
 
       if (data?.url) {
-        // Zu Stripe Checkout weiterleiten
         window.location.href = data.url;
       } else {
         throw new Error('Keine Checkout-URL erhalten');
@@ -71,20 +76,15 @@ const Checkout = () => {
     }
   };
 
-  // Demo-Modus: Zahlung simulieren
+  // Demo-Modus: Zahlung simulieren (über sichere RPC-Funktion)
   const handleDemoCheckout = async () => {
     setIsProcessing(true);
     setError('');
 
     try {
-      // Warte auf Auth falls noch nicht geladen
-      let currentUser = user;
-      if (!currentUser?.id) {
-        // Versuche Session zu holen
+      if (!user?.id) {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          currentUser = session.user;
-        } else {
+        if (!session?.user) {
           throw new Error('Bitte melde dich zuerst an');
         }
       }
@@ -92,30 +92,16 @@ const Checkout = () => {
       // Simuliere kurze Verarbeitung
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Zertifikatsnummer generieren mit crypto für bessere Einzigartigkeit
-      const year = new Date().getFullYear();
-      const random = crypto.getRandomValues(new Uint32Array(1))[0] % 90000 + 10000;
-      const certificateNumber = `DC-${year}-${random}`;
+      // Sichere Server-Funktion statt direktem DB-Zugriff
+      const { error: rpcError } = await supabase.rpc('demo_activate_membership');
 
-      // Upsert: Erstellt oder aktualisiert atomar (keine Race Condition)
-      const { error: upsertError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: currentUser.id,
-          email: currentUser.email,
-          first_name: currentUser.user_metadata?.first_name || pendingUser?.firstName,
-          last_name: currentUser.user_metadata?.last_name || pendingUser?.lastName,
-          membership_status: 'active',
-          paid_at: new Date().toISOString(),
-          paid_amount: 249,
-          access_granted_at: new Date().toISOString(),
-          certificate_number: certificateNumber
-        }, { onConflict: 'id' });
-
-      if (upsertError) {
-        throw new Error('Profil konnte nicht aktualisiert werden');
+      if (rpcError) {
+        throw new Error('Aktivierung fehlgeschlagen: ' + rpcError.message);
       }
 
+      // Profil im AuthContext aktualisieren bevor wir navigieren
+      await refreshMembership();
+      clearPendingRegistration();
       navigate('/willkommen');
     } catch (err) {
       setError(err.message || 'Fehler bei der Verarbeitung');
@@ -155,11 +141,11 @@ const Checkout = () => {
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link
-          to="/portal"
+          to="/"
           className="inline-flex items-center text-gray-600 hover:text-swiss-red mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Zurück
+          Zurück zur Startseite
         </Link>
 
         {/* Progress Steps */}
@@ -242,7 +228,7 @@ const Checkout = () => {
                     ) : (
                       <>
                         <Lock className="w-5 h-5" />
-                        Jetzt 249€ bezahlen
+                        Jetzt Mitglied werden – 249€/Jahr
                         <ExternalLink className="w-4 h-4" />
                       </>
                     )}
@@ -340,12 +326,11 @@ const Checkout = () => {
               <div className="border-b border-gray-100 pb-4 mb-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <p className="font-semibold text-gray-900">Mitgliedschaft</p>
+                    <p className="font-semibold text-gray-900">Jahresmitgliedschaft</p>
                     <p className="text-sm text-gray-500">Deine Chance e.V.</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-gray-900">249€</p>
-                    <p className="text-sm text-gray-400 line-through">499€</p>
+                    <p className="font-bold text-gray-900">249€/Jahr</p>
                   </div>
                 </div>
               </div>
@@ -354,7 +339,7 @@ const Checkout = () => {
               <div className="space-y-2 mb-6">
                 <p className="text-sm font-medium text-gray-700">Inklusive:</p>
                 {[
-                  'Lebenslanger Plattformzugang',
+                  '12 Monate Plattformzugang',
                   'Jobplattform & Stellenangebote',
                   'Dokumentenvorlagen',
                   'Community-Zugang',
@@ -371,10 +356,10 @@ const Checkout = () => {
               {/* Total */}
               <div className="bg-gray-900 text-white rounded-xl p-4 mb-4">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">Gesamtsumme</span>
+                  <span className="font-medium">Jahresbeitrag</span>
                   <span className="text-2xl font-bold">249€</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Einmalzahlung, kein Abo</p>
+                <p className="text-xs text-gray-400 mt-1">Jährlich kündbar, keine automatische Verlängerung</p>
               </div>
 
               {/* Guarantee */}
