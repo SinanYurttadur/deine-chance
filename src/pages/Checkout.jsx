@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { isStripeConfigured } from '../lib/stripe';
 import usePageTitle from '../hooks/usePageTitle';
 import {
   CreditCard,
@@ -18,11 +17,10 @@ import {
 const Checkout = () => {
   usePageTitle('Checkout');
   const navigate = useNavigate();
-  const { user, profile, isLoading, getPendingRegistration, clearPendingRegistration, refreshMembership } = useAuth();
+  const { user, profile, isLoading, getPendingRegistration } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [pendingUser, setPendingUser] = useState(null);
-  const stripeReady = isStripeConfigured();
 
   // Lade pending registration falls vorhanden
   useEffect(() => {
@@ -76,46 +74,9 @@ const Checkout = () => {
     }
   };
 
-  // Demo-Modus: Zahlung simulieren (über sichere RPC-Funktion)
-  const handleDemoCheckout = async () => {
-    setIsProcessing(true);
-    setError('');
-
-    try {
-      if (!user?.id) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) {
-          throw new Error('Bitte melde dich zuerst an');
-        }
-      }
-
-      // Simuliere kurze Verarbeitung
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Sichere Server-Funktion statt direktem DB-Zugriff
-      const { error: rpcError } = await supabase.rpc('demo_activate_membership');
-
-      if (rpcError) {
-        throw new Error('Aktivierung fehlgeschlagen: ' + rpcError.message);
-      }
-
-      // Profil im AuthContext aktualisieren bevor wir navigieren
-      await refreshMembership();
-      clearPendingRegistration();
-      navigate('/willkommen');
-    } catch (err) {
-      setError(err.message || 'Fehler bei der Verarbeitung');
-      setIsProcessing(false);
-    }
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (stripeReady) {
-      handleStripeCheckout();
-    } else {
-      handleDemoCheckout();
-    }
+    handleStripeCheckout();
   };
 
   // Loading state
@@ -129,7 +90,6 @@ const Checkout = () => {
       </div>
     );
   }
-
 
   // Nutze pending data als Fallback für Anzeige
   const displayName = user?.firstName || user?.user_metadata?.first_name || pendingUser?.firstName || '';
@@ -177,119 +137,59 @@ const Checkout = () => {
                 Mitgliedschaft aktivieren
               </h1>
 
-              {/* Stripe Ready - Zeige Checkout Button */}
-              {stripeReady ? (
-                <div className="space-y-6">
-                  <div className="bg-gray-50 rounded-xl p-6">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 bg-swiss-red rounded-xl flex items-center justify-center">
-                        <CreditCard className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">Sichere Zahlung</p>
-                        <p className="text-sm text-gray-500">Kreditkarte, SEPA, PayPal & mehr</p>
-                      </div>
+              <div className="space-y-6">
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-swiss-red rounded-xl flex items-center justify-center">
+                      <CreditCard className="w-6 h-6 text-white" />
                     </div>
-                    <p className="text-sm text-gray-600">
-                      Du wirst zu unserem sicheren Zahlungspartner Stripe weitergeleitet.
-                      Alle gängigen Zahlungsmethoden werden akzeptiert.
-                    </p>
-                  </div>
-
-                  {/* Zahlungsmethoden Icons */}
-                  <div className="flex items-center justify-center gap-4 py-4">
-                    <img src="https://cdn.jsdelivr.net/gh/lipis/flag-icons@6.6.6/flags/4x3/visa.svg" alt="Visa" className="h-8 opacity-60" onError={(e) => e.target.style.display='none'} />
-                    <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-500">VISA</div>
-                    <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-500">MC</div>
-                    <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-500">SEPA</div>
-                    <div className="w-12 h-8 bg-blue-100 rounded flex items-center justify-center text-xs font-bold text-blue-600">PayPal</div>
-                  </div>
-
-                  {error && (
-                    <div className="bg-red-50 text-red-600 p-4 rounded-xl flex items-center gap-2">
-                      <AlertCircle className="w-5 h-5" />
-                      {error}
+                    <div>
+                      <p className="font-semibold text-gray-900">Sichere Zahlung</p>
+                      <p className="text-sm text-gray-500">Kreditkarte, SEPA-Lastschrift & mehr</p>
                     </div>
-                  )}
-
-                  <button
-                    onClick={handleSubmit}
-                    disabled={isProcessing}
-                    className="w-full bg-swiss-red hover:bg-swiss-red-dark text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Weiterleitung zu Stripe...
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-5 h-5" />
-                        Jetzt Mitglied werden – 249€/Jahr
-                        <ExternalLink className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Du wirst zu unserem sicheren Zahlungspartner Stripe weitergeleitet.
+                    Alle gängigen Zahlungsmethoden werden akzeptiert.
+                  </p>
                 </div>
-              ) : (
-                /* Demo Mode */
-                <div className="space-y-6">
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-yellow-800">Demo-Modus aktiv</p>
-                        <p className="text-sm text-yellow-700">
-                          Stripe ist noch nicht konfiguriert. Klicke auf den Button um die Mitgliedschaft im Demo-Modus zu aktivieren.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="bg-gray-50 rounded-xl p-6">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center">
-                        <CreditCard className="w-6 h-6 text-gray-500" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">Test-Zahlung</p>
-                        <p className="text-sm text-gray-500">Keine echte Abbuchung</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {error && (
-                    <div className="bg-red-50 text-red-600 p-4 rounded-xl flex items-center gap-2">
-                      <AlertCircle className="w-5 h-5" />
-                      {error}
-                    </div>
-                  )}
-
-                  <button
-                    onClick={handleSubmit}
-                    disabled={isProcessing}
-                    className="w-full bg-gray-800 hover:bg-gray-900 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Wird aktiviert...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-5 h-5" />
-                        Demo: Mitgliedschaft aktivieren
-                      </>
-                    )}
-                  </button>
+                {/* Zahlungsmethoden Icons */}
+                <div className="flex items-center justify-center gap-4 py-4">
+                  <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-500">VISA</div>
+                  <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-500">MC</div>
+                  <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-500">SEPA</div>
                 </div>
-              )}
+
+                {error && (
+                  <div className="bg-red-50 text-red-600 p-4 rounded-xl flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5" />
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleSubmit}
+                  disabled={isProcessing}
+                  className="w-full bg-swiss-red hover:bg-swiss-red-dark text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70"
+                >
+                  {isProcessing ? (
+                    <>
+                      <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Weiterleitung zu Stripe...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-5 h-5" />
+                      Jetzt Mitglied werden – 249€/Jahr
+                      <ExternalLink className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
 
               {/* Security Info */}
               <div className="mt-8 pt-6 border-t border-gray-100">
