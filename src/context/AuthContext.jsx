@@ -65,6 +65,12 @@ export const AuthProvider = ({ children }) => {
           setUser(session.user);
           const userProfile = await loadProfile(session.user.id);
           setProfile(userProfile);
+
+          // Bei Passwort-Recovery automatisch zur Reset-Seite weiterleiten
+          if (event === 'PASSWORD_RECOVERY') {
+            window.location.replace('/passwort-neu');
+            return;
+          }
         } else {
           setUser(null);
           setProfile(null);
