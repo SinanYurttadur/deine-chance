@@ -17,76 +17,43 @@ const ResetPassword = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let checkCount = 0;
-    let pollIntervalId = null;
-    const maxChecks = 10;
+    let timeoutId;
 
-    const checkForSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    // Auf Auth-Events hören (PKCE-Flow: Supabase tauscht ?code= automatisch)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!isMounted) return;
+        if (session) {
+          setIsReady(true);
+          // URL aufräumen (code/token Parameter entfernen)
+          window.history.replaceState({}, '', '/passwort-neu');
+        }
+      }
+    );
 
-      if (!isMounted) return false;
-
-      if (session) {
+    // Prüfe ob Session bereits existiert (z.B. bei Seiten-Reload)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && isMounted) {
         setIsReady(true);
         window.history.replaceState({}, '', '/passwort-neu');
-        return true;
       }
+    });
 
-      return false;
-    };
-
-    const handleRecovery = async () => {
-      try {
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get('access_token');
-
-        if (!accessToken) {
-          const hasSession = await checkForSession();
-          if (!hasSession && isMounted) {
-            setError('Kein gültiger Reset-Link gefunden.');
-          }
-          return;
-        }
-
-        pollIntervalId = setInterval(async () => {
-          checkCount++;
-          const hasSession = await checkForSession();
-
-          if (hasSession || checkCount >= maxChecks) {
-            clearInterval(pollIntervalId);
-            pollIntervalId = null;
-
-            if (!hasSession && isMounted) {
-              const refreshToken = params.get('refresh_token');
-
-              const { data } = await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken || ''
-              });
-
-              if (data?.session && isMounted) {
-                setIsReady(true);
-                window.history.replaceState({}, '', '/passwort-neu');
-              } else if (isMounted) {
-                setError('Der Link ist ungültig oder abgelaufen.');
-              }
-            }
-          }
-        }, 300);
-
-      } catch {
-        if (isMounted) {
-          setError('Ein Fehler ist aufgetreten.');
-        }
+    // Timeout nach 8 Sekunden falls kein Session zustande kommt
+    timeoutId = setTimeout(async () => {
+      if (!isMounted) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && isMounted) {
+        setIsReady(true);
+      } else if (isMounted) {
+        setError('Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an.');
       }
-    };
-
-    handleRecovery();
+    }, 8000);
 
     return () => {
       isMounted = false;
-      if (pollIntervalId) clearInterval(pollIntervalId);
+      subscription.unsubscribe();
+      clearTimeout(timeoutId);
     };
   }, []);
 
