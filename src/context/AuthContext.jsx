@@ -39,6 +39,11 @@ export const AuthProvider = ({ children }) => {
 
   // Session beim Start prüfen
   useEffect(() => {
+    // Safety-Timeout: isLoading darf nie endlos hängen
+    const safetyTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 5000);
+
     const initAuth = async () => {
       try {
         // Aktuelle Session holen
@@ -52,6 +57,7 @@ export const AuthProvider = ({ children }) => {
       } catch (err) {
         console.error('Auth init fehlgeschlagen:', err);
       } finally {
+        clearTimeout(safetyTimeout);
         setIsLoading(false);
       }
     };
@@ -61,16 +67,16 @@ export const AuthProvider = ({ children }) => {
     // Auth State Changes abonnieren
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Bei Passwort-Recovery sofort zur Reset-Seite weiterleiten
+        if (event === 'PASSWORD_RECOVERY') {
+          window.location.replace('/passwort-neu');
+          return;
+        }
+
         if (session?.user) {
           setUser(session.user);
           const userProfile = await loadProfile(session.user.id);
           setProfile(userProfile);
-
-          // Bei Passwort-Recovery automatisch zur Reset-Seite weiterleiten
-          if (event === 'PASSWORD_RECOVERY') {
-            window.location.replace('/passwort-neu');
-            return;
-          }
         } else {
           setUser(null);
           setProfile(null);
@@ -79,7 +85,10 @@ export const AuthProvider = ({ children }) => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(safetyTimeout);
+    };
   }, []);
 
   // Registrierung mit Email/Passwort
