@@ -62,12 +62,12 @@ const Cancel = () => {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Mitgliedschaft beendet</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">Kündigung bestätigt</h1>
           <p className="text-gray-600 mb-6">
-            Deine Mitgliedschaft wurde gekündigt. Du hast noch Zugang bis zum Ende deiner aktuellen Abrechnungsperiode.
+            Dein Abo wird zum Ende der aktuellen Laufzeit beendet. Du behältst bis dahin vollen Zugang zu allen Inhalten und Funktionen.
           </p>
           <p className="text-sm text-gray-500 mb-8">
-            Wir wünschen dir alles Gute für deine Zukunft!
+            Wir wünschen dir alles Gute für deine Zukunft! Du kannst dein Abo jederzeit wieder aktivieren.
           </p>
           <Link
             to="/"
@@ -251,8 +251,8 @@ const Cancel = () => {
                 className="w-5 h-5 mt-0.5 rounded border-gray-300 text-swiss-red focus:ring-swiss-red"
               />
               <span className="text-gray-700 text-sm">
-                Ich verstehe, dass meine Mitgliedschaft beendet wird und ich keinen Zugang mehr
-                zur Plattform, Community und allen Inhalten haben werde. Eine Rückerstattung ist nur innerhalb von 14 Tagen nach Beitritt möglich (siehe Beitragsordnung §5).
+                Ich verstehe, dass mein Abo zum Ende der aktuellen Laufzeit beendet wird. Bis dahin behalte ich vollen Zugang.
+                Nach Ablauf verliere ich den Zugang zur Plattform, Community und allen Inhalten.
               </span>
             </label>
 

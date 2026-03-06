@@ -257,26 +257,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Mitgliedschaft kündigen (über sichere RPC-Funktion)
+  // Mitgliedschaft kündigen (über Stripe API-Endpunkt)
   const cancelMembership = async (reason) => {
     if (!user || !accessTokenRef.current) {
       return { success: false, error: 'Nicht eingeloggt' };
     }
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/cancel_own_membership`, {
+      const res = await fetch('/api/cancel-subscription', {
         method: 'POST',
         headers: {
-          'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${accessTokenRef.current}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ p_reason: reason }),
+        body: JSON.stringify({ reason }),
       });
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || 'Kündigung fehlgeschlagen');
+        throw new Error(err.error || 'Kündigung fehlgeschlagen');
       }
 
       // Profil neu laden

@@ -26,6 +26,10 @@ export default async function handler(req, res) {
     console.error('STRIPE_SECRET_KEY ist nicht konfiguriert');
     return res.status(500).json({ error: 'Zahlungssystem nicht konfiguriert. Bitte kontaktiere den Support.' });
   }
+  if (!process.env.STRIPE_PRICE_ID) {
+    console.error('STRIPE_PRICE_ID ist nicht konfiguriert');
+    return res.status(500).json({ error: 'Zahlungssystem nicht konfiguriert. Bitte kontaktiere den Support.' });
+  }
   if (!process.env.VITE_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.error('Supabase Env-Vars fehlen:', {
       url: !!process.env.VITE_SUPABASE_URL,
@@ -58,34 +62,47 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Sitzung ungültig. Bitte erneut anmelden.' });
     }
 
+    // Bestehenden Stripe Customer wiederverwenden (für Re-Subscribe nach Kündigung)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('stripe_customer_id')
+      .eq('id', user.id)
+      .single();
+
     const siteUrl = process.env.SITE_URL || 'https://deinechance24.org';
 
-    // Checkout Session erstellen – Preis wird SERVER-SEITIG definiert
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'sepa_debit'],
-      mode: 'payment',
+    // Checkout Session erstellen – Jahres-Abo (Subscription)
+    const sessionParams = {
+      mode: 'subscription',
       allow_promotion_codes: true,
-      customer_email: user.email,
+      subscription_data: {
+        metadata: {
+          user_id: user.id,
+          product: 'jahresmitgliedschaft',
+        },
+      },
       metadata: {
         user_id: user.id,
         product: 'jahresmitgliedschaft',
       },
       line_items: [
         {
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: 'Deine Chance e.V. Jahresmitgliedschaft',
-              description: 'Vollzugang zur Auswanderer-Plattform für 12 Monate',
-            },
-            unit_amount: 24900, // 249€
-          },
+          price: process.env.STRIPE_PRICE_ID,
           quantity: 1,
         },
       ],
       success_url: `${siteUrl}/willkommen?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/checkout`,
-    });
+    };
+
+    // Bestehenden Customer wiederverwenden oder Email für neuen Customer setzen
+    if (profile?.stripe_customer_id) {
+      sessionParams.customer = profile.stripe_customer_id;
+    } else {
+      sessionParams.customer_email = user.email;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return res.status(200).json({ url: session.url });
   } catch (err) {

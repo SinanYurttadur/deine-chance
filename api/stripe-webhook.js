@@ -86,6 +86,11 @@ export default async function handler(req, res) {
       updateData.stripe_customer_id = session.customer;
     }
 
+    // Subscription-ID speichern (für Kündigung via Stripe API)
+    if (session.subscription) {
+      updateData.stripe_subscription_id = session.subscription;
+    }
+
     // Nur bei Erst-Aktivierung Zertifikatsnummer setzen
     if (existingProfile?.membership_status === 'pending' || !existingProfile?.membership_status) {
       updateData.certificate_number = certificateNumber;
@@ -102,6 +107,43 @@ export default async function handler(req, res) {
     }
 
     console.log(`Mitgliedschaft aktiviert für User: ${userId}`);
+  }
+
+  // Subscription beendet (Laufzeit abgelaufen oder sofort gekündigt)
+  if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object;
+
+    const { data: profile, error: findError } = await supabase
+      .from('profiles')
+      .select('id, membership_status')
+      .eq('stripe_subscription_id', subscription.id)
+      .single();
+
+    if (findError || !profile) {
+      console.error('Kein Profil für Subscription gefunden:', subscription.id);
+      return res.status(200).json({ received: true, warning: 'No profile found' });
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        membership_status: 'cancelled',
+        cancelled_at: new Date().toISOString(),
+      })
+      .eq('id', profile.id);
+
+    if (error) {
+      console.error('Kündigung-Update fehlgeschlagen:', JSON.stringify(error));
+      return res.status(500).json({ error: 'Database error', details: error.message });
+    }
+
+    console.log(`Subscription beendet für User: ${profile.id}`);
+  }
+
+  // Zahlung fehlgeschlagen (Stripe hat Smart Retries eingebaut)
+  if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object;
+    console.warn('Zahlung fehlgeschlagen für Subscription:', invoice.subscription, 'Customer:', invoice.customer);
   }
 
   return res.status(200).json({ received: true });
