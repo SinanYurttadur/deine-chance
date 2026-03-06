@@ -74,11 +74,15 @@ export default async function handler(req, res) {
     const updateData = {
       membership_status: 'active',
       paid_at: new Date().toISOString(),
-      paid_amount: (session.amount_total || 24900) / 100,
+      paid_amount: (session.amount_total ?? 24900) / 100,
       access_granted_at: new Date().toISOString(),
       stripe_session_id: session.id,
-      stripe_customer_id: session.customer,
     };
+
+    // stripe_customer_id nur setzen wenn vorhanden (bei 100%-Gutschein ist customer null)
+    if (session.customer) {
+      updateData.stripe_customer_id = session.customer;
+    }
 
     // Nur bei Erst-Aktivierung Zertifikatsnummer setzen
     if (existingProfile?.membership_status === 'pending' || !existingProfile?.membership_status) {
@@ -91,8 +95,8 @@ export default async function handler(req, res) {
       .eq('id', userId);
 
     if (error) {
-      console.error('Profil-Update fehlgeschlagen:', error);
-      return res.status(500).json({ error: 'Database error' });
+      console.error('Profil-Update fehlgeschlagen:', JSON.stringify(error));
+      return res.status(500).json({ error: 'Database error', details: error.message });
     }
 
     console.log(`Mitgliedschaft aktiviert für User: ${userId}`);
