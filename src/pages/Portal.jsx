@@ -33,7 +33,11 @@ import {
   Bot,
   Eye,
   Copy,
-  AlertTriangle
+  AlertTriangle,
+  Share2,
+  MessageCircle,
+  Mail,
+  Heart
 } from 'lucide-react';
 
 // Job Portals für die Schweiz
@@ -288,6 +292,8 @@ const Portal = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [completedChapters, setCompletedChapters] = useState([]);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [messageCopied, setMessageCopied] = useState(false);
 
   // Load chapter progress from Supabase on mount
   useEffect(() => {
@@ -428,6 +434,7 @@ const Portal = () => {
     { id: 'community', name: 'Alpi – Berater', icon: Bot },
     { id: 'links', name: 'Nützliche Links', icon: ExternalLink },
     { id: 'webinars', name: 'Videos', icon: Play },
+    { id: 'referral', name: 'Freunde einladen', icon: Share2 },
     { id: 'settings', name: 'Einstellungen', icon: Settings }
   ];
 
@@ -815,6 +822,102 @@ const Portal = () => {
           {/* Videos Tab */}
           {activeTab === 'webinars' && (
             <VideoAcademy />
+          )}
+
+          {/* Freunde einladen Tab */}
+          {activeTab === 'referral' && (
+            <div className="space-y-8">
+              <div className="text-center max-w-xl mx-auto">
+                <div className="w-16 h-16 bg-swiss-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Heart className="w-8 h-8 text-swiss-red" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">Hilf anderen in die Schweiz</h1>
+                <p className="text-gray-600">
+                  Teile deine Chance – lade Freunde und Bekannte ein, die auch den Schritt in die Schweiz wagen wollen.
+                </p>
+              </div>
+
+              <div className="max-w-xl mx-auto space-y-6">
+                {/* Link kopieren */}
+                <div className="bg-white rounded-2xl shadow-sm p-6">
+                  <h2 className="font-semibold text-gray-900 mb-3">Dein Einladungs-Link</h2>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-700 font-mono text-sm truncate">
+                      https://deinechance24.org
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('https://deinechance24.org');
+                        setLinkCopied(true);
+                        setTimeout(() => setLinkCopied(false), 2000);
+                      }}
+                      className={`px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2 text-sm whitespace-nowrap ${
+                        linkCopied
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-swiss-red text-white hover:bg-swiss-red-dark'
+                      }`}
+                    >
+                      {linkCopied ? (
+                        <><CheckCircle className="w-4 h-4" /> Kopiert!</>
+                      ) : (
+                        <><Copy className="w-4 h-4" /> Kopieren</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Teilen-Buttons */}
+                <div className="bg-white rounded-2xl shadow-sm p-6">
+                  <h2 className="font-semibold text-gray-900 mb-3">Direkt teilen</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent('Ich bin Mitglied bei Deine Chance e.V. – die Plattform hat mir beim Auswandern in die Schweiz extrem geholfen. Schau mal rein: https://deinechance24.org')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1fb855] text-white py-3 px-4 rounded-xl font-medium transition-colors"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      WhatsApp
+                    </a>
+                    <a
+                      href={`mailto:?subject=${encodeURIComponent('Tipp: Deine Chance e.V. – Auswandern in die Schweiz')}&body=${encodeURIComponent('Hi,\n\nich bin Mitglied bei Deine Chance e.V. – eine Plattform, die beim Auswandern in die Schweiz hilft. Von Jobsuche bis Behördengänge ist alles abgedeckt.\n\nSchau mal rein: https://deinechance24.org\n\nLiebe Grüße')}`}
+                      className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white py-3 px-4 rounded-xl font-medium transition-colors"
+                    >
+                      <Mail className="w-5 h-5" />
+                      Per E-Mail
+                    </a>
+                  </div>
+                </div>
+
+                {/* Vorformulierte Nachricht */}
+                <div className="bg-white rounded-2xl shadow-sm p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="font-semibold text-gray-900">Vorformulierte Nachricht</h2>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('Ich bin Mitglied bei Deine Chance e.V. – die Plattform hat mir beim Auswandern in die Schweiz extrem geholfen. Wissens-Kapitel, Job-Netzwerk, Community und persönliche Beratung – alles an einem Ort. Schau mal rein: https://deinechance24.org');
+                        setMessageCopied(true);
+                        setTimeout(() => setMessageCopied(false), 2000);
+                      }}
+                      className={`text-sm px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+                        messageCopied
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {messageCopied ? (
+                        <><CheckCircle className="w-3.5 h-3.5" /> Kopiert!</>
+                      ) : (
+                        <><Copy className="w-3.5 h-3.5" /> Kopieren</>
+                      )}
+                    </button>
+                  </div>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-700 leading-relaxed">
+                    Ich bin Mitglied bei Deine Chance e.V. – die Plattform hat mir beim Auswandern in die Schweiz extrem geholfen. Wissens-Kapitel, Job-Netzwerk, Community und persönliche Beratung – alles an einem Ort. Schau mal rein: https://deinechance24.org
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Settings Tab */}
