@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
 import usePageTitle from '../hooks/usePageTitle';
 import {
   ArrowLeft,
@@ -31,142 +30,22 @@ const INCLUDED_FEATURES = [
 const Checkout = () => {
   usePageTitle('Checkout');
   const navigate = useNavigate();
-  const { user, profile, isLoading, getPendingRegistration, hasActiveMembership } = useAuth();
+  const { user, profile, isLoading, getPendingRegistration, hasActiveMembership, getAccessToken } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [pendingUser, setPendingUser] = useState(null);
-  const [debugInfo, setDebugInfo] = useState({});
 
   useEffect(() => {
     const pending = getPendingRegistration();
     if (pending) setPendingUser(pending);
   }, []);
 
-  // Debug: Profil-Status + direkte Tests
+  // Aktive Mitglieder zum Portal weiterleiten
   useEffect(() => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'NICHT GESETZT';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    const info = {
-      authLoading: isLoading,
-      userId: user?.id || 'null',
-      profileStatus: profile?.membership_status || 'null (Profil nicht geladen)',
-      hasActive: hasActiveMembership(),
-      supabaseUrl: supabaseUrl,
-    };
-    setDebugInfo(info);
-
-    if (!isLoading && user?.id) {
-      // Test: Raw fetch (umgeht Supabase Client komplett)
-      const url = `${supabaseUrl}/rest/v1/profiles?select=membership_status&id=eq.${user.id}`;
-      fetch(url, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-        },
-      })
-        .then(res => res.json())
-        .then(data => {
-          setDebugInfo(prev => ({
-            ...prev,
-            'rawFetch': Array.isArray(data) && data.length > 0
-              ? `OK: ${data[0]?.membership_status}`
-              : `Leer/Fehler: ${JSON.stringify(data).slice(0, 100)}`,
-          }));
-        })
-        .catch(err => {
-          setDebugInfo(prev => ({
-            ...prev,
-            'rawFetch': `NETZWERK-FEHLER: ${err.message}`,
-          }));
-        });
-
-      // Test: Session Token
-      supabase.auth.getSession().then(({ data }) => {
-        const token = data?.session?.access_token;
-        if (token) {
-          // Nochmal mit echtem User-Token
-          fetch(`${supabaseUrl}/rest/v1/profiles?select=membership_status&id=eq.${user.id}`, {
-            headers: {
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${token}`,
-            },
-          })
-            .then(res => res.json())
-            .then(data => {
-              setDebugInfo(prev => ({
-                ...prev,
-                'rawFetch.auth': Array.isArray(data) && data.length > 0
-                  ? `OK: ${data[0]?.membership_status}`
-                  : `Leer/Fehler: ${JSON.stringify(data).slice(0, 100)}`,
-                'session.token': `vorhanden`,
-              }));
-            })
-            .catch(err => {
-              setDebugInfo(prev => ({
-                ...prev,
-                'rawFetch.auth': `NETZWERK-FEHLER: ${err.message}`,
-              }));
-            });
-        } else {
-          setDebugInfo(prev => ({ ...prev, 'session.token': 'FEHLT' }));
-        }
-      });
-    }
-  }, [isLoading, user, profile]);
-
-  // Mitgliedschaft prüfen und aktive Mitglieder zum Portal weiterleiten
-  useEffect(() => {
-    if (isLoading) return;
-
-    // 1) AuthContext hat Profil → sofort weiterleiten
-    if (hasActiveMembership()) {
+    if (!isLoading && hasActiveMembership()) {
       navigate('/portal', { replace: true });
-      return;
     }
-
-    // 2) Kein Profil trotz Auth → direkte DB-Abfrage
-    const checkDirectly = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user?.id) {
-          setDebugInfo(prev => ({ ...prev, directCheck: 'Keine Session' }));
-          return;
-        }
-
-        const { data, error: queryError } = await supabase
-          .from('profiles')
-          .select('membership_status')
-          .eq('id', session.user.id)
-          .single();
-
-        if (queryError) {
-          setDebugInfo(prev => ({
-            ...prev,
-            directCheck: `DB-Fehler: ${queryError.code} – ${queryError.message}`,
-          }));
-          console.error('Checkout: Profil-Query fehlgeschlagen:', queryError);
-          return;
-        }
-
-        setDebugInfo(prev => ({
-          ...prev,
-          directCheck: `OK → membership_status = "${data?.membership_status}"`,
-        }));
-
-        if (data?.membership_status === 'active') {
-          navigate('/portal', { replace: true });
-        }
-      } catch (err) {
-        setDebugInfo(prev => ({ ...prev, directCheck: `Exception: ${err.message}` }));
-      }
-    };
-
-    // Nur prüfen wenn User eingeloggt aber Profil fehlt oder nicht active
-    if (user?.id) {
-      checkDirectly();
-    }
-  }, [isLoading, profile, navigate, user]);
+  }, [isLoading, profile, navigate]);
 
   const handleStripeCheckout = useCallback(async () => {
     setIsProcessing(true);
@@ -177,25 +56,11 @@ const Checkout = () => {
         throw new Error('Bitte melde dich zuerst an.');
       }
 
-      // Session mit eigenem Timeout holen
-      let session;
-      try {
-        const result = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('timeout')), 8000)
-          ),
-        ]);
-        session = result.data?.session;
-      } catch {
-        throw new Error('Sitzung konnte nicht geladen werden. Bitte lade die Seite neu.');
-      }
-
-      if (!session?.access_token) {
+      // Token aus AuthContext (gespeichert von onAuthStateChange)
+      const token = getAccessToken();
+      if (!token) {
         throw new Error('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.');
       }
-
-      setDebugInfo(prev => ({ ...prev, stripeStep: 'Session OK, rufe API...' }));
 
       // API-Call mit Timeout
       const controller = new AbortController();
@@ -207,7 +72,7 @@ const Checkout = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${token}`,
           },
           signal: controller.signal,
         });
@@ -219,8 +84,6 @@ const Checkout = () => {
       } finally {
         clearTimeout(timeout);
       }
-
-      setDebugInfo(prev => ({ ...prev, stripeStep: `API antwortete: ${response.status}` }));
 
       // Antwort parsen
       let data;
@@ -246,17 +109,14 @@ const Checkout = () => {
         throw new Error('Keine Checkout-URL erhalten.');
       }
 
-      // Zu Stripe weiterleiten
       window.location.href = data.url;
     } catch (err) {
       console.error('Checkout Fehler:', err);
-      setDebugInfo(prev => ({ ...prev, stripeStep: `FEHLER: ${err.message}` }));
       setError(err.message || 'Ein unerwarteter Fehler ist aufgetreten.');
       setIsProcessing(false);
     }
-  }, [user]);
+  }, [user, getAccessToken]);
 
-  // Loading
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-red-50">
@@ -275,18 +135,6 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 py-8 px-4 sm:py-12">
       <div className="max-w-lg mx-auto">
-
-        {/* DEBUG PANEL – nach Debugging entfernen */}
-        {Object.keys(debugInfo).length > 0 && (
-          <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-4 mb-4 text-xs font-mono">
-            <p className="font-bold text-yellow-800 mb-2">Debug Info (temporär):</p>
-            {Object.entries(debugInfo).map(([key, val]) => (
-              <p key={key} className="text-yellow-700">
-                <span className="font-semibold">{key}:</span> {String(val)}
-              </p>
-            ))}
-          </div>
-        )}
 
         {/* Back */}
         <Link

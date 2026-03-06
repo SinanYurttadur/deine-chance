@@ -1,7 +1,10 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -11,89 +14,49 @@ export const useAuth = () => {
   return context;
 };
 
+// Profil über raw fetch laden (umgeht Supabase Client Session-Lock Bug)
+async function fetchProfile(userId, accessToken) {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?select=*&id=eq.${userId}`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (!res.ok) {
+      console.error('Profil laden HTTP-Fehler:', res.status);
+      return null;
+    }
+
+    const data = await res.json();
+    return Array.isArray(data) && data.length > 0 ? data[0] : null;
+  } catch (err) {
+    console.error('Profil laden fehlgeschlagen:', err.message);
+    return null;
+  }
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Access Token speichern (von onAuthStateChange, nicht getSession)
+  const accessTokenRef = useRef(null);
 
-  // Lade Benutzerprofil aus der Datenbank
-  // Erst direkte Abfrage, dann RPC-Fallback (umgeht RLS-Probleme)
-  const loadProfile = async (userId) => {
-    // 1) Direkte Abfrage (Standard)
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (!error && data) {
-        return data;
-      }
-
-      if (error) {
-        console.warn('Profil direkt laden fehlgeschlagen:', error.code, error.message);
-      }
-    } catch (err) {
-      console.warn('Profil direkt laden Exception:', err.message);
-    }
-
-    // 2) Fallback: RPC-Funktion (SECURITY DEFINER, umgeht RLS)
-    try {
-      const { data, error } = await supabase.rpc('get_own_profile');
-
-      if (error) {
-        console.error('Profil RPC fehlgeschlagen:', error.code, error.message);
-        return null;
-      }
-
-      // RPC gibt Array zurück, wir brauchen das erste Element
-      const profile = Array.isArray(data) ? data[0] : data;
-      if (profile) {
-        console.log('Profil über RPC geladen (Fallback)');
-        return profile;
-      }
-
-      console.warn('Kein Profil gefunden für User:', userId);
-      return null;
-    } catch (err) {
-      console.error('Profil RPC Exception:', err.message);
-      return null;
-    }
-  };
-
-  // Session beim Start prüfen
+  // Session beim Start prüfen – NUR über onAuthStateChange (getSession hängt)
   useEffect(() => {
     // Safety-Timeout: isLoading darf nie endlos hängen
     const safetyTimeout = setTimeout(() => {
       setIsLoading(false);
     }, 5000);
 
-    const initAuth = async () => {
-      try {
-        // Aktuelle Session holen
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (session?.user) {
-          setUser(session.user);
-          const userProfile = await loadProfile(session.user.id);
-          if (!userProfile) {
-            console.warn('Profil konnte nicht geladen werden für User:', session.user.id, '– ggf. RLS/Netzwerk prüfen');
-          }
-          setProfile(userProfile);
-        }
-      } catch (err) {
-        console.error('Auth init fehlgeschlagen:', err);
-      } finally {
-        clearTimeout(safetyTimeout);
-        setIsLoading(false);
-      }
-    };
-
-    initAuth();
-
-    // Auth State Changes abonnieren
+    // Auth State Changes abonnieren – einzige zuverlässige Session-Quelle
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         // Bei Passwort-Recovery sofort zur Reset-Seite weiterleiten
@@ -102,14 +65,23 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        if (session?.user) {
+        if (session?.user && session?.access_token) {
+          accessTokenRef.current = session.access_token;
           setUser(session.user);
-          const userProfile = await loadProfile(session.user.id);
+
+          const userProfile = await fetchProfile(session.user.id, session.access_token);
           setProfile(userProfile);
+
+          if (!userProfile) {
+            console.warn('Profil nicht gefunden für User:', session.user.id);
+          }
         } else {
+          accessTokenRef.current = null;
           setUser(null);
           setProfile(null);
         }
+
+        clearTimeout(safetyTimeout);
         setIsLoading(false);
       }
     );
@@ -120,12 +92,14 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  // Access Token für externe Nutzung (z.B. Stripe Checkout API)
+  const getAccessToken = () => accessTokenRef.current;
+
   // Registrierung mit Email/Passwort
   const register = async ({ email, password, firstName, lastName, phone }) => {
     setError(null);
 
     try {
-      // 1. Supabase Auth User erstellen (Trigger erstellt Profil automatisch)
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -141,27 +115,28 @@ export const AuthProvider = ({ children }) => {
 
       if (signUpError) throw signUpError;
 
-      // 2. Warten bis der DB-Trigger das Profil erstellt hat (Retry-Polling)
-      if (data.user) {
+      // Warten bis der DB-Trigger das Profil erstellt hat
+      if (data.user && data.session) {
+        accessTokenRef.current = data.session.access_token;
         let existingProfile = null;
+
         for (let attempt = 0; attempt < 5; attempt++) {
           await new Promise(resolve => setTimeout(resolve, 400));
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', data.user.id)
-            .single();
-          if (profile) {
-            existingProfile = profile;
-            break;
-          }
+          existingProfile = await fetchProfile(data.user.id, data.session.access_token);
+          if (existingProfile) break;
         }
 
         if (!existingProfile) {
           // Fallback: Manuell erstellen falls Trigger nicht lief
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${data.session.access_token}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({
               id: data.user.id,
               email: email,
               first_name: firstName,
@@ -169,16 +144,16 @@ export const AuthProvider = ({ children }) => {
               phone: phone,
               membership_status: 'pending',
               certificate_number: `DC-${new Date().getFullYear()}-${crypto.getRandomValues(new Uint32Array(1))[0].toString(36).toUpperCase().slice(0, 7)}`
-            });
+            }),
+          });
 
-          if (profileError && profileError.code !== '23505') {
-            console.error('Profil erstellen fehlgeschlagen:', profileError);
+          if (!res.ok && res.status !== 409) {
+            console.error('Profil erstellen fehlgeschlagen:', res.status);
           }
         }
 
-        // User und Profil setzen
         setUser(data.user);
-        const userProfile = await loadProfile(data.user.id);
+        const userProfile = await fetchProfile(data.user.id, data.session.access_token);
         setProfile(userProfile);
       }
 
@@ -202,11 +177,14 @@ export const AuthProvider = ({ children }) => {
 
       if (signInError) throw signInError;
 
+      if (data.session) {
+        accessTokenRef.current = data.session.access_token;
+      }
+
       return { success: true, user: data.user };
     } catch (err) {
       setError(err.message);
 
-      // Deutsche Fehlermeldungen
       let errorMessage = err.message;
       if (err.message.includes('Invalid login credentials')) {
         errorMessage = 'Ungültige E-Mail oder Passwort';
@@ -225,6 +203,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Logout fehlgeschlagen:', err);
     }
+    accessTokenRef.current = null;
     setUser(null);
     setProfile(null);
   };
@@ -263,14 +242,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Mitgliedschaft-Status neu laden (nach serverseitiger Aktivierung via Webhook)
-  // WICHTIG: Die Aktivierung erfolgt ausschließlich serverseitig (Stripe Webhook).
-  // Diese Funktion lädt nur den aktuellen Status aus der Datenbank.
+  // Mitgliedschaft-Status neu laden
   const refreshMembership = async () => {
-    if (!user) return { success: false, error: 'Nicht eingeloggt' };
+    if (!user || !accessTokenRef.current) {
+      return { success: false, error: 'Nicht eingeloggt' };
+    }
 
     try {
-      const updatedProfile = await loadProfile(user.id);
+      const updatedProfile = await fetchProfile(user.id, accessTokenRef.current);
       setProfile(updatedProfile);
       return { success: true, status: updatedProfile?.membership_status };
     } catch (err) {
@@ -280,17 +259,28 @@ export const AuthProvider = ({ children }) => {
 
   // Mitgliedschaft kündigen (über sichere RPC-Funktion)
   const cancelMembership = async (reason) => {
-    if (!user) return { success: false, error: 'Nicht eingeloggt' };
+    if (!user || !accessTokenRef.current) {
+      return { success: false, error: 'Nicht eingeloggt' };
+    }
 
     try {
-      const { error } = await supabase.rpc('cancel_own_membership', {
-        p_reason: reason
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/cancel_own_membership`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${accessTokenRef.current}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ p_reason: reason }),
       });
 
-      if (error) throw error;
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Kündigung fehlgeschlagen');
+      }
 
       // Profil neu laden
-      const updatedProfile = await loadProfile(user.id);
+      const updatedProfile = await fetchProfile(user.id, accessTokenRef.current);
       setProfile(updatedProfile);
 
       return { success: true };
@@ -304,7 +294,6 @@ export const AuthProvider = ({ children }) => {
     return profile?.membership_status === 'active';
   };
 
-  // Pending Registration für Checkout (aus localStorage, Fallback)
   const getPendingRegistration = () => {
     try {
       const pending = localStorage.getItem('deinechance_pending_user');
@@ -323,7 +312,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('deinechance_pending_user');
   };
 
-  // Kombiniertes User-Objekt (für Abwärtskompatibilität)
+  // Kombiniertes User-Objekt
   const combinedUser = user ? {
     id: user.id,
     email: user.email,
@@ -344,6 +333,7 @@ export const AuthProvider = ({ children }) => {
     error,
     isAuthenticated: !!user,
     hasActiveMembership,
+    getAccessToken,
     register,
     login,
     logout,
