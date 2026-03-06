@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { trackProgress, getProgress } from '../lib/forum';
 import {
   Mountain,
   FileCheck,
@@ -392,32 +394,29 @@ Willkommen in der Schweiz – willkommen zuhause! 🇨🇭`
 ];
 
 const KnowledgeSection = ({ setActiveTab }) => {
+  const { user } = useAuth();
   const [activePhase, setActivePhase] = useState('decision');
   const [expandedChapter, setExpandedChapter] = useState(null);
-  const [completedChapters, setCompletedChapters] = useState(() => {
-    try {
-      const saved = localStorage.getItem('dc_completed_chapters');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      localStorage.removeItem('dc_completed_chapters');
-      return [];
-    }
-  });
+  const [completedChapters, setCompletedChapters] = useState([]);
 
-  // Persist to localStorage whenever completedChapters changes
+  // Fortschritt aus Supabase laden (pro User)
   useEffect(() => {
-    localStorage.setItem('dc_completed_chapters', JSON.stringify(completedChapters));
-  }, [completedChapters]);
+    if (!user) return;
+    getProgress().then(progress => {
+      setCompletedChapters(progress.chapters);
+    });
+  }, [user]);
 
   const currentPhase = journeyPhases.find(p => p.id === activePhase);
   const totalChapters = journeyPhases.reduce((acc, phase) => acc + phase.chapters.length, 0);
   const progress = Math.round((completedChapters.length / totalChapters) * 100);
 
-  const markAsComplete = (chapterId) => {
+  const markAsComplete = useCallback((chapterId) => {
     if (!completedChapters.includes(chapterId)) {
-      setCompletedChapters([...completedChapters, chapterId]);
+      setCompletedChapters(prev => [...prev, chapterId]);
+      trackProgress('chapter', chapterId);
     }
-  };
+  }, [completedChapters]);
 
   return (
     <div className="space-y-8">
