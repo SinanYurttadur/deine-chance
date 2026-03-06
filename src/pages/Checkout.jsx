@@ -42,52 +42,75 @@ const Checkout = () => {
     if (pending) setPendingUser(pending);
   }, []);
 
-  // Debug: Profil-Status + direkte DB-Tests
+  // Debug: Profil-Status + direkte Tests
   useEffect(() => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'NICHT GESETZT';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
     const info = {
       authLoading: isLoading,
       userId: user?.id || 'null',
       profileStatus: profile?.membership_status || 'null (Profil nicht geladen)',
       hasActive: hasActiveMembership(),
+      supabaseUrl: supabaseUrl,
     };
     setDebugInfo(info);
 
-    // Direkte Tests wenn User eingeloggt
     if (!isLoading && user?.id) {
-      // Test 1: Direkte Tabellen-Abfrage
-      supabase
-        .from('profiles')
-        .select('membership_status')
-        .eq('id', user.id)
-        .single()
-        .then(({ data, error }) => {
+      // Test: Raw fetch (umgeht Supabase Client komplett)
+      const url = `${supabaseUrl}/rest/v1/profiles?select=membership_status&id=eq.${user.id}`;
+      fetch(url, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+      })
+        .then(res => res.json())
+        .then(data => {
           setDebugInfo(prev => ({
             ...prev,
-            'query.profiles': error
-              ? `FEHLER: ${error.code} – ${error.message}`
-              : `OK: ${data?.membership_status}`,
+            'rawFetch': Array.isArray(data) && data.length > 0
+              ? `OK: ${data[0]?.membership_status}`
+              : `Leer/Fehler: ${JSON.stringify(data).slice(0, 100)}`,
+          }));
+        })
+        .catch(err => {
+          setDebugInfo(prev => ({
+            ...prev,
+            'rawFetch': `NETZWERK-FEHLER: ${err.message}`,
           }));
         });
 
-      // Test 2: RPC Funktion
-      supabase
-        .rpc('get_own_profile')
-        .then(({ data, error }) => {
-          setDebugInfo(prev => ({
-            ...prev,
-            'rpc.get_own_profile': error
-              ? `FEHLER: ${error.code} – ${error.message}`
-              : `OK: ${Array.isArray(data) ? data[0]?.membership_status : 'kein Array'}`,
-          }));
-        });
-
-      // Test 3: Session-Token vorhanden?
+      // Test: Session Token
       supabase.auth.getSession().then(({ data }) => {
         const token = data?.session?.access_token;
-        setDebugInfo(prev => ({
-          ...prev,
-          'session.token': token ? `vorhanden (${token.slice(0, 20)}...)` : 'FEHLT',
-        }));
+        if (token) {
+          // Nochmal mit echtem User-Token
+          fetch(`${supabaseUrl}/rest/v1/profiles?select=membership_status&id=eq.${user.id}`, {
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${token}`,
+            },
+          })
+            .then(res => res.json())
+            .then(data => {
+              setDebugInfo(prev => ({
+                ...prev,
+                'rawFetch.auth': Array.isArray(data) && data.length > 0
+                  ? `OK: ${data[0]?.membership_status}`
+                  : `Leer/Fehler: ${JSON.stringify(data).slice(0, 100)}`,
+                'session.token': `vorhanden`,
+              }));
+            })
+            .catch(err => {
+              setDebugInfo(prev => ({
+                ...prev,
+                'rawFetch.auth': `NETZWERK-FEHLER: ${err.message}`,
+              }));
+            });
+        } else {
+          setDebugInfo(prev => ({ ...prev, 'session.token': 'FEHLT' }));
+        }
       });
     }
   }, [isLoading, user, profile]);
