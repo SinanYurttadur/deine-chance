@@ -1,14 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import usePageTitle from '../hooks/usePageTitle';
 import {
-  CreditCard,
   ArrowLeft,
   Shield,
   Lock,
-  CheckCircle,
   AlertCircle,
   Loader2,
   Briefcase,
@@ -17,7 +15,8 @@ import {
   HeadphonesIcon,
   Award,
   RefreshCw,
-  Clock
+  Clock,
+  RotateCcw
 } from 'lucide-react';
 
 const INCLUDED_FEATURES = [
@@ -32,34 +31,62 @@ const INCLUDED_FEATURES = [
 const Checkout = () => {
   usePageTitle('Checkout');
   const navigate = useNavigate();
-  const { user, profile, isLoading, getPendingRegistration, hasActiveMembership, refreshMembership } = useAuth();
+  const { user, profile, isLoading, getPendingRegistration, hasActiveMembership } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [pendingUser, setPendingUser] = useState(null);
+  const [membershipChecked, setMembershipChecked] = useState(false);
 
   useEffect(() => {
     const pending = getPendingRegistration();
     if (pending) setPendingUser(pending);
   }, []);
 
-  // Bereits aktive Mitgliedschaft -> direkt zum Portal
-  // Falls Profil nicht geladen: einmal nachladen als Fallback
+  // 1) AuthContext-basierte Weiterleitung
   useEffect(() => {
     if (!isLoading && hasActiveMembership()) {
       navigate('/portal', { replace: true });
-      return;
     }
-    // Profil fehlt trotz eingeloggtem User → einmal nachladen
-    if (!isLoading && user?.id && !profile) {
-      refreshMembership().then(({ status }) => {
-        if (status === 'active') {
+  }, [isLoading, profile, navigate]);
+
+  // 2) Direkte DB-Prüfung als Fallback – umgeht AuthContext komplett
+  //    Falls AuthContext das Profil nicht laden konnte (RLS-Timing, Race Condition)
+  useEffect(() => {
+    if (isLoading || membershipChecked) return;
+
+    const checkMembershipDirectly = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) return;
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('membership_status')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          console.warn('Checkout: Direkte Profilabfrage fehlgeschlagen:', error.message);
+          return;
+        }
+
+        if (data?.membership_status === 'active') {
+          console.log('Checkout: Aktive Mitgliedschaft erkannt (Direktabfrage) → Portal');
           navigate('/portal', { replace: true });
         }
-      });
-    }
-  }, [isLoading, profile, navigate, user]);
+      } catch (err) {
+        console.warn('Checkout: Membership-Check Fehler:', err.message);
+      } finally {
+        setMembershipChecked(true);
+      }
+    };
 
-  const handleStripeCheckout = async () => {
+    // Kurz warten damit AuthContext zuerst die Chance hat
+    const timer = setTimeout(checkMembershipDirectly, 800);
+    return () => clearTimeout(timer);
+  }, [isLoading, membershipChecked, navigate]);
+
+  const handleStripeCheckout = useCallback(async () => {
     setIsProcessing(true);
     setError('');
 
@@ -68,13 +95,25 @@ const Checkout = () => {
         throw new Error('Bitte melde dich zuerst an.');
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
+      // Session mit eigenem Timeout holen
+      let session;
+      try {
+        const result = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 8000)
+          ),
+        ]);
+        session = result.data?.session;
+      } catch {
+        throw new Error('Sitzung konnte nicht geladen werden. Bitte lade die Seite neu.');
+      }
 
       if (!session?.access_token) {
         throw new Error('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.');
       }
 
-      // Fetch mit Timeout (20s) damit der Button nicht ewig dreht
+      // API-Call mit Timeout
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
 
@@ -90,37 +129,47 @@ const Checkout = () => {
         });
       } catch (fetchErr) {
         if (fetchErr.name === 'AbortError') {
-          throw new Error('Die Verbindung hat zu lange gedauert. Bitte versuche es erneut.');
+          throw new Error('Server antwortet nicht (Timeout). Bitte versuche es erneut.');
         }
-        throw new Error('Verbindung zum Server fehlgeschlagen. Bitte prüfe deine Internetverbindung.');
+        throw new Error(`Verbindung fehlgeschlagen: ${fetchErr.message}`);
       } finally {
         clearTimeout(timeout);
       }
 
-      // Sicherstellen, dass die Antwort JSON ist
+      // Antwort parsen
       let data;
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Checkout API: Nicht-JSON Antwort:', response.status, text.slice(0, 200));
+        throw new Error(`Server-Fehler (${response.status}). Bitte versuche es später erneut.`);
+      }
+
       try {
         data = await response.json();
       } catch {
-        throw new Error('Unerwartete Serverantwort. Bitte versuche es später erneut.');
+        throw new Error('Ungültige Serverantwort. Bitte versuche es später erneut.');
       }
 
       if (!response.ok) {
-        throw new Error(data?.error || 'Checkout konnte nicht gestartet werden.');
+        console.error('Checkout API Fehler:', response.status, data);
+        throw new Error(data?.error || `Checkout fehlgeschlagen (${response.status}).`);
       }
 
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('Keine Checkout-URL erhalten. Bitte versuche es erneut.');
+      if (!data?.url) {
+        throw new Error('Keine Checkout-URL erhalten.');
       }
+
+      // Zu Stripe weiterleiten
+      window.location.href = data.url;
     } catch (err) {
-      console.error('Checkout error:', err);
+      console.error('Checkout Fehler:', err);
       setError(err.message || 'Ein unerwarteter Fehler ist aufgetreten.');
       setIsProcessing(false);
     }
-  };
+  }, [user]);
 
+  // Loading
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-red-50">
@@ -216,13 +265,28 @@ const Checkout = () => {
 
             {/* Error */}
             {error && (
-              <div className="bg-red-50 text-red-700 p-4 rounded-xl flex items-start gap-3 mb-5 text-sm">
-                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p>{error}</p>
+              <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl mb-5 text-sm">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium mb-1">Fehler beim Checkout</p>
+                    <p className="text-red-600">{error}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => { setError(''); setIsProcessing(false); }}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Erneut versuchen
+                  </button>
                   {error.includes('Sitzung') && (
-                    <Link to="/login" className="text-red-800 underline font-medium mt-1 inline-block">
-                      Zum Login →
+                    <Link
+                      to="/login"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      Zum Login
                     </Link>
                   )}
                 </div>
