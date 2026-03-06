@@ -1,6 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
+import { useState } from 'react';
 import {
   Mountain,
   FileCheck,
@@ -393,48 +391,13 @@ Willkommen in der Schweiz – willkommen zuhause! 🇨🇭`
   }
 ];
 
-const KnowledgeSection = ({ setActiveTab }) => {
-  const { user } = useAuth();
+const KnowledgeSection = ({ setActiveTab, completedChapters, markAsComplete }) => {
   const [activePhase, setActivePhase] = useState('decision');
   const [expandedChapter, setExpandedChapter] = useState(null);
-  const [completedChapters, setCompletedChapters] = useState([]);
-
-  // Fortschritt aus Supabase laden (pro User)
-  useEffect(() => {
-    if (!user?.id) return;
-
-    supabase
-      .from('user_progress')
-      .select('item_id')
-      .eq('user_id', user.id)
-      .eq('item_type', 'chapter')
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('Fortschritt laden fehlgeschlagen:', error);
-          return;
-        }
-        if (data) {
-          setCompletedChapters(data.map(row => row.item_id));
-        }
-      });
-  }, [user?.id]);
 
   const currentPhase = journeyPhases.find(p => p.id === activePhase);
   const totalChapters = journeyPhases.reduce((acc, phase) => acc + phase.chapters.length, 0);
   const progress = Math.round((completedChapters.length / totalChapters) * 100);
-
-  const markAsComplete = useCallback((chapterId) => {
-    if (!user?.id || completedChapters.includes(chapterId)) return;
-
-    setCompletedChapters(prev => [...prev, chapterId]);
-
-    supabase
-      .from('user_progress')
-      .insert({ user_id: user.id, item_type: 'chapter', item_id: chapterId })
-      .then(({ error }) => {
-        if (error) console.error('Fortschritt speichern fehlgeschlagen:', error);
-      });
-  }, [user?.id, completedChapters]);
 
   return (
     <div className="space-y-8">

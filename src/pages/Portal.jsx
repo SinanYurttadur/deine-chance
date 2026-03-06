@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 import usePageTitle from '../hooks/usePageTitle';
 import { templates, usefulLinks } from '../data/communityData';
 import KnowledgeSection from '../components/KnowledgeSection';
@@ -285,6 +286,40 @@ const Portal = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [completedChapters, setCompletedChapters] = useState([]);
+
+  // Load chapter progress from Supabase on mount
+  useEffect(() => {
+    if (!user?.id) return;
+
+    supabase
+      .from('user_progress')
+      .select('item_id')
+      .eq('user_id', user.id)
+      .eq('item_type', 'chapter')
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Fortschritt laden fehlgeschlagen:', error);
+          return;
+        }
+        if (data) {
+          setCompletedChapters(data.map(row => row.item_id));
+        }
+      });
+  }, [user?.id]);
+
+  const markChapterComplete = useCallback((chapterId) => {
+    if (!user?.id || completedChapters.includes(chapterId)) return;
+
+    setCompletedChapters(prev => [...prev, chapterId]);
+
+    supabase
+      .from('user_progress')
+      .insert({ user_id: user.id, item_type: 'chapter', item_id: chapterId })
+      .then(({ error }) => {
+        if (error) console.error('Fortschritt speichern fehlgeschlagen:', error);
+      });
+  }, [user?.id, completedChapters]);
 
   const handleLogout = async () => {
     await logout();
@@ -659,7 +694,11 @@ const Portal = () => {
 
           {/* Knowledge Tab */}
           {activeTab === 'knowledge' && (
-            <KnowledgeSection setActiveTab={setActiveTab} />
+            <KnowledgeSection
+              setActiveTab={setActiveTab}
+              completedChapters={completedChapters}
+              markAsComplete={markChapterComplete}
+            />
           )}
 
           {/* Jobs Tab */}
