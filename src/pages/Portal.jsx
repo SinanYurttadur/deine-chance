@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import usePageTitle from '../hooks/usePageTitle';
-import { templates } from '../data/communityData';
+import { templates, usefulLinks } from '../data/communityData';
 import KnowledgeSection from '../components/KnowledgeSection';
 import CommunitySection from '../components/CommunitySection';
 import SalaryCalculator from '../components/SalaryCalculator';
@@ -32,7 +32,10 @@ import {
   Menu,
   X,
   BookOpen,
-  Calculator
+  Calculator,
+  Bot,
+  Eye,
+  Copy
 } from 'lucide-react';
 
 // Job Portals für die Schweiz
@@ -127,8 +130,21 @@ const getAllTemplates = () => {
 };
 
 
+// Category filter keys matching template object keys
+const categoryFilters = [
+  { key: null, label: 'Alle' },
+  { key: 'bewerbung', label: 'Bewerbung' },
+  { key: 'wohnung', label: 'Wohnung' },
+  { key: 'steuern', label: 'Steuern' },
+  { key: 'familie', label: 'Familie' },
+];
+
 // Documents Section Component
 const DocumentsSection = () => {
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [viewTemplate, setViewTemplate] = useState(null);
+  const [copied, setCopied] = useState(false);
+
   const downloadTemplate = (template) => {
     const blob = new Blob([template.content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -139,12 +155,35 @@ const DocumentsSection = () => {
     URL.revokeObjectURL(url);
   };
 
+  const copyContent = async (content) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = content;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  // Filter templates by active category
+  const filteredCategories = activeCategory
+    ? { [activeCategory]: templates[activeCategory] }
+    : templates;
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dokumente & Vorlagen</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Vorlagen & Checklisten</h1>
           <p className="text-gray-600 mt-1">Alle Vorlagen für deine Auswanderung – kostenlos als Mitglied.</p>
         </div>
         <div className="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-xl text-sm font-medium">
@@ -153,43 +192,105 @@ const DocumentsSection = () => {
         </div>
       </div>
 
-      {/* Categories */}
-      {Object.values(templates).map(category => (
-        <div key={category.title} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-            <span className="text-2xl">{category.emoji}</span>
-            <div>
-              <h2 className="font-bold text-gray-900">{category.title}</h2>
-              <p className="text-sm text-gray-500">{category.items.length} Vorlagen</p>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-            {category.items.map((template) => (
-              <div key={template.id} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-swiss-red/10 rounded-xl flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-swiss-red" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                      <p className="text-xs text-gray-500">{template.type} • {template.downloads.toLocaleString()} Downloads</p>
-                    </div>
+      {/* Category Tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {categoryFilters.map(cat => (
+          <button
+            key={cat.label}
+            onClick={() => setActiveCategory(cat.key)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+              activeCategory === cat.key
+                ? 'bg-swiss-red text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Template List */}
+      <div className="space-y-4">
+        {Object.values(filteredCategories).flatMap(category =>
+          category.items.map(template => (
+            <div key={template.id} className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-swiss-red/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-swiss-red" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900">{template.name}</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">{template.type} • {template.downloads.toLocaleString()} Downloads</p>
+                  <p className="text-sm text-gray-600 mt-2">{template.description}</p>
+                  <div className="flex gap-3 mt-4">
+                    <button
+                      onClick={() => { setViewTemplate(template); setCopied(false); }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-swiss-red hover:text-white text-gray-700 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Anzeigen
+                    </button>
+                    <button
+                      onClick={() => downloadTemplate(template)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-swiss-red hover:text-white text-gray-700 transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      Herunterladen
+                    </button>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 mb-4">{template.description}</p>
-                <button
-                  onClick={() => downloadTemplate(template)}
-                  className="w-full bg-gray-100 hover:bg-swiss-red hover:text-white text-gray-700 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Herunterladen
-                </button>
               </div>
-            ))}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* View Modal */}
+      {viewTemplate && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setViewTemplate(null)}>
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-swiss-red/10 rounded-xl flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-swiss-red" />
+                </div>
+                <h2 className="font-bold text-gray-900">{viewTemplate.name}</h2>
+              </div>
+              <button onClick={() => setViewTemplate(null)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 bg-gray-50 rounded-xl p-4 leading-relaxed">
+                {viewTemplate.content}
+              </pre>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+              <button
+                onClick={() => copyContent(viewTemplate.content)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-swiss-red hover:bg-swiss-red-dark text-white transition-colors"
+              >
+                <Copy className="w-4 h-4" />
+                {copied ? 'Kopiert!' : 'Kopieren'}
+              </button>
+              <button
+                onClick={() => setViewTemplate(null)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+              >
+                Schließen
+              </button>
+            </div>
           </div>
         </div>
-      ))}
+      )}
 
       {/* Pro Tip */}
       <div className="bg-gradient-to-r from-swiss-red to-red-600 rounded-2xl p-6 text-white flex flex-col md:flex-row items-start gap-4">
@@ -199,9 +300,9 @@ const DocumentsSection = () => {
         <div>
           <h3 className="font-bold mb-1">Tipp: Lass dir helfen!</h3>
           <p className="text-white/80 text-sm">
-            Unsicher bei der Bewerbung? In der Community findest du Mitglieder,
-            die dir Feedback zu deinem Lebenslauf geben können. Schweizer Mitglieder
-            kennen die lokalen Standards!
+            Unsicher bei der Bewerbung? Frag den Auswanderer-Berater –
+            er kennt die Schweizer Standards und hilft dir bei Lebenslauf,
+            Motivationsschreiben und mehr!
           </p>
         </div>
       </div>
@@ -318,8 +419,9 @@ const Portal = () => {
     { id: 'knowledge', name: 'Wissensbibliothek', icon: BookOpen, badge: '13' },
     { id: 'jobs', name: 'Stellenangebote', icon: Briefcase, badge: '523' },
     { id: 'calculator', name: 'Gehaltsrechner', icon: Calculator, badge: 'Neu' },
-    { id: 'documents', name: 'Dokumente', icon: FileText },
-    { id: 'community', name: 'Community', icon: Users },
+    { id: 'documents', name: 'Vorlagen & Checklisten', icon: FileText },
+    { id: 'community', name: 'Alpi – Berater', icon: Bot },
+    { id: 'links', name: 'Nützliche Links', icon: ExternalLink },
     { id: 'webinars', name: 'Videos', icon: Play },
     { id: 'settings', name: 'Einstellungen', icon: Settings }
   ];
@@ -745,6 +847,40 @@ const Portal = () => {
           {/* Community Tab */}
           {activeTab === 'community' && (
             <CommunitySection user={user} />
+          )}
+
+          {/* Links Tab */}
+          {activeTab === 'links' && (
+            <div className="space-y-8">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Nützliche Links</h1>
+                <p className="text-gray-600 mt-1">Wichtige Websites und Portale für deine Auswanderung in die Schweiz.</p>
+              </div>
+              {usefulLinks.map(category => (
+                <div key={category.category}>
+                  <h3 className="font-bold text-gray-900 text-lg mb-4">{category.category}</h3>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {category.links.map(link => (
+                      <a
+                        key={link.name}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 hover:shadow-md hover:border-swiss-red/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-8 h-8 bg-swiss-red/10 rounded-lg flex items-center justify-center group-hover:bg-swiss-red transition-colors">
+                            <ExternalLink className="w-4 h-4 text-swiss-red group-hover:text-white transition-colors" />
+                          </div>
+                          <h4 className="font-semibold text-gray-900 group-hover:text-swiss-red transition-colors">{link.name}</h4>
+                        </div>
+                        <p className="text-sm text-gray-600">{link.description}</p>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
 
           {/* Videos Tab */}

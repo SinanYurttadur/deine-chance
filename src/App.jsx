@@ -19,6 +19,7 @@ import LeadForm from './components/LeadForm';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
 import SalaryCalculatorCompact from './components/SalaryCalculatorCompact';
+import AIBeraterSection from './components/AIBeraterSection';
 
 // Pages – lazy loaded for better performance
 const Register = lazy(() => import('./pages/Register'));
@@ -81,6 +82,7 @@ const LandingPage = () => {
             </div>
           </section>
         )}
+        <AIBeraterSection />
         <Certificate />
         <ValueGrid />
         <Network />
