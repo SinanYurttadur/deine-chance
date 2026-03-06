@@ -303,7 +303,7 @@ const Portal = () => {
           return;
         }
         if (data) {
-          setCompletedChapters(data.map(row => row.item_id));
+          setCompletedChapters(data.map(row => Number(row.item_id)));
         }
       });
   }, [user?.id]);
@@ -315,7 +315,7 @@ const Portal = () => {
 
     supabase
       .from('user_progress')
-      .insert({ user_id: user.id, item_type: 'chapter', item_id: chapterId })
+      .upsert({ user_id: user.id, item_type: 'chapter', item_id: chapterId }, { onConflict: 'user_id,item_type,item_id' })
       .then(({ error }) => {
         if (error) console.error('Fortschritt speichern fehlgeschlagen:', error);
       });
