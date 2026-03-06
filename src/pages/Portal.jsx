@@ -376,18 +376,18 @@ const Portal = () => {
                     setActiveTab(item.id);
                     setSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all ${
                     activeTab === item.id
                       ? 'bg-swiss-red text-white'
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.name}</span>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-sm font-medium truncate">{item.name}</span>
                   </div>
                   {item.badge && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    <span className={`text-[11px] px-1.5 py-0.5 rounded-full flex-shrink-0 ml-1 ${
                       activeTab === item.id ? 'bg-white/20' : 'bg-swiss-red/10 text-swiss-red'
                     }`}>
                       {item.badge}
