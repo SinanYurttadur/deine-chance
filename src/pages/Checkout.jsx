@@ -10,79 +10,120 @@ import {
   Lock,
   CheckCircle,
   AlertCircle,
-  ExternalLink,
-  Loader2
+  Loader2,
+  Briefcase,
+  FileText,
+  Users,
+  HeadphonesIcon,
+  Award,
+  RefreshCw,
+  Clock
 } from 'lucide-react';
+
+const INCLUDED_FEATURES = [
+  { icon: Clock, label: '12 Monate Vollzugang' },
+  { icon: Briefcase, label: 'Jobplattform & Stellenangebote' },
+  { icon: FileText, label: 'Dokumentenvorlagen' },
+  { icon: Users, label: 'Community-Zugang' },
+  { icon: HeadphonesIcon, label: 'Persönlicher Support' },
+  { icon: Award, label: 'Mitgliedschaftszertifikat' },
+];
 
 const Checkout = () => {
   usePageTitle('Checkout');
   const navigate = useNavigate();
-  const { user, profile, isLoading, getPendingRegistration } = useAuth();
+  const { user, profile, isLoading, getPendingRegistration, hasActiveMembership, refreshMembership } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [pendingUser, setPendingUser] = useState(null);
 
-  // Lade pending registration falls vorhanden
   useEffect(() => {
     const pending = getPendingRegistration();
-    if (pending) {
-      setPendingUser(pending);
-    }
+    if (pending) setPendingUser(pending);
   }, []);
 
   // Bereits aktive Mitgliedschaft -> direkt zum Portal
+  // Falls Profil nicht geladen: einmal nachladen als Fallback
   useEffect(() => {
-    if (!isLoading && profile?.membership_status === 'active') {
+    if (!isLoading && hasActiveMembership()) {
       navigate('/portal', { replace: true });
+      return;
     }
-  }, [isLoading, profile, navigate]);
+    // Profil fehlt trotz eingeloggtem User → einmal nachladen
+    if (!isLoading && user?.id && !profile) {
+      refreshMembership().then(({ status }) => {
+        if (status === 'active') {
+          navigate('/portal', { replace: true });
+        }
+      });
+    }
+  }, [isLoading, profile, navigate, user]);
 
-  // Stripe Checkout starten
   const handleStripeCheckout = async () => {
     setIsProcessing(true);
     setError('');
 
     try {
       if (!user?.id) {
-        throw new Error('Bitte melde dich zuerst an');
+        throw new Error('Bitte melde dich zuerst an.');
       }
 
-      // Vercel Serverless Function aufrufen (URLs werden server-seitig definiert)
       const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
 
-      const data = await response.json();
+      if (!session?.access_token) {
+        throw new Error('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.');
+      }
+
+      // Fetch mit Timeout (20s) damit der Button nicht ewig dreht
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+
+      let response;
+      try {
+        response = await fetch('/api/create-checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          signal: controller.signal,
+        });
+      } catch (fetchErr) {
+        if (fetchErr.name === 'AbortError') {
+          throw new Error('Die Verbindung hat zu lange gedauert. Bitte versuche es erneut.');
+        }
+        throw new Error('Verbindung zum Server fehlgeschlagen. Bitte prüfe deine Internetverbindung.');
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      // Sicherstellen, dass die Antwort JSON ist
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error('Unerwartete Serverantwort. Bitte versuche es später erneut.');
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Checkout konnte nicht gestartet werden');
+        throw new Error(data?.error || 'Checkout konnte nicht gestartet werden.');
       }
 
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        throw new Error('Keine Checkout-URL erhalten');
+        throw new Error('Keine Checkout-URL erhalten. Bitte versuche es erneut.');
       }
     } catch (err) {
-      setError(err.message || 'Checkout konnte nicht gestartet werden');
+      console.error('Checkout error:', err);
+      setError(err.message || 'Ein unerwarteter Fehler ist aufgetreten.');
       setIsProcessing(false);
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    handleStripeCheckout();
-  };
-
-  // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-red-50">
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-swiss-red animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Wird geladen...</p>
@@ -91,184 +132,138 @@ const Checkout = () => {
     );
   }
 
-  // Nutze pending data als Fallback für Anzeige
   const displayName = user?.firstName || user?.user_metadata?.first_name || pendingUser?.firstName || '';
   const displayLastName = user?.lastName || user?.user_metadata?.last_name || pendingUser?.lastName || '';
   const displayEmail = user?.email || pendingUser?.email || '';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Back Button */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 py-8 px-4 sm:py-12">
+      <div className="max-w-lg mx-auto">
+
+        {/* Back */}
         <Link
           to="/"
-          className="inline-flex items-center text-gray-600 hover:text-swiss-red mb-8 transition-colors"
+          className="inline-flex items-center text-gray-500 hover:text-swiss-red mb-6 text-sm transition-colors"
         >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Zurück zur Startseite
+          <ArrowLeft className="w-4 h-4 mr-1.5" />
+          Zurück
         </Link>
 
-        {/* Progress Steps */}
-        <div className="flex items-center justify-center mb-8">
-          <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center font-semibold bg-green-500 text-white">
-              <CheckCircle className="w-5 h-5" />
-            </div>
-            <div className="w-20 h-1 bg-green-500"></div>
-            <div className="w-10 h-10 rounded-full flex items-center justify-center font-semibold bg-swiss-red text-white">
-              2
-            </div>
-            <div className="w-20 h-1 bg-gray-200"></div>
-            <div className="w-10 h-10 rounded-full flex items-center justify-center font-semibold bg-gray-200 text-gray-500">
-              3
+        {/* Main Card */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+
+          {/* Header */}
+          <div className="bg-gray-900 text-white px-6 py-5 sm:px-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-lg font-bold">Mitgliedschaft aktivieren</h1>
+                <p className="text-gray-400 text-sm mt-0.5">Deine Chance e.V.</p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold">249€</p>
+                <p className="text-gray-400 text-xs">pro Jahr</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="text-center mb-6">
-          <p className="text-sm text-gray-500">Schritt 2: Zahlung</p>
-        </div>
+          <div className="px-6 py-6 sm:px-8">
 
-        <div className="grid lg:grid-cols-5 gap-8">
-          {/* Payment Section */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-3xl shadow-xl p-8">
-              <h1 className="text-2xl font-bold text-gray-900 mb-6">
-                Mitgliedschaft aktivieren
-              </h1>
-
-              <div className="space-y-6">
-                <div className="bg-gray-50 rounded-xl p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 bg-swiss-red rounded-xl flex items-center justify-center">
-                      <CreditCard className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">Sichere Zahlung</p>
-                      <p className="text-sm text-gray-500">Kreditkarte, SEPA-Lastschrift & mehr</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Du wirst zu unserem sicheren Zahlungspartner Stripe weitergeleitet.
-                    Alle gängigen Zahlungsmethoden werden akzeptiert.
-                  </p>
+            {/* User Info */}
+            {displayEmail && (
+              <div className="flex items-center gap-3 mb-6 pb-5 border-b border-gray-100">
+                <div className="w-9 h-9 rounded-full bg-swiss-red/10 flex items-center justify-center text-swiss-red font-semibold text-sm">
+                  {displayName?.[0]?.toUpperCase() || displayEmail[0]?.toUpperCase()}
                 </div>
-
-                {/* Zahlungsmethoden Icons */}
-                <div className="flex items-center justify-center gap-4 py-4">
-                  <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-500">VISA</div>
-                  <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-500">MC</div>
-                  <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-500">SEPA</div>
-                </div>
-
-                {error && (
-                  <div className="bg-red-50 text-red-600 p-4 rounded-xl flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5" />
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  onClick={handleSubmit}
-                  disabled={isProcessing}
-                  className="w-full bg-swiss-red hover:bg-swiss-red-dark text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70"
-                >
-                  {isProcessing ? (
-                    <>
-                      <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Weiterleitung zu Stripe...
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-5 h-5" />
-                      Jetzt Mitglied werden – 249€/Jahr
-                      <ExternalLink className="w-4 h-4" />
-                    </>
+                <div className="min-w-0">
+                  {displayName && (
+                    <p className="font-medium text-gray-900 text-sm truncate">
+                      {displayName} {displayLastName}
+                    </p>
                   )}
-                </button>
-              </div>
-
-              {/* Security Info */}
-              <div className="mt-8 pt-6 border-t border-gray-100">
-                <div className="flex items-center justify-center gap-6 text-gray-400 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4" />
-                    <span>256-bit SSL</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
-                    <span>Sicher bezahlen</span>
-                  </div>
+                  <p className="text-gray-500 text-sm truncate">{displayEmail}</p>
                 </div>
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* Order Summary */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-3xl shadow-xl p-6 sticky top-8">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">
-                Deine Bestellung
-              </h2>
-
-              {/* User Info */}
-              <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                <p className="font-medium text-gray-900">
-                  {displayName} {displayLastName}
-                </p>
-                <p className="text-sm text-gray-500">{displayEmail}</p>
-              </div>
-
-              {/* Product */}
-              <div className="border-b border-gray-100 pb-4 mb-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <p className="font-semibold text-gray-900">Jahresmitgliedschaft</p>
-                    <p className="text-sm text-gray-500">Deine Chance e.V.</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-gray-900">249€/Jahr</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Included */}
-              <div className="space-y-2 mb-6">
-                <p className="text-sm font-medium text-gray-700">Inklusive:</p>
-                {[
-                  '12 Monate Plattformzugang',
-                  'Jobplattform & Stellenangebote',
-                  'Dokumentenvorlagen',
-                  'Community-Zugang',
-                  'Persönlicher Support',
-                  'Mitgliedschaftszertifikat'
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>{item}</span>
+            {/* Features */}
+            <div className="mb-6">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                Inklusive
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
+                {INCLUDED_FEATURES.map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-3.5 h-3.5 text-green-600" />
+                    </div>
+                    <span className="text-sm text-gray-700">{label}</span>
                   </div>
                 ))}
               </div>
+            </div>
 
-              {/* Total */}
-              <div className="bg-gray-900 text-white rounded-xl p-4 mb-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Jahresbeitrag</span>
-                  <span className="text-2xl font-bold">249€</span>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">Jährlich kündbar, keine automatische Verlängerung</p>
+            {/* Guarantee + No auto-renew */}
+            <div className="flex gap-3 mb-6">
+              <div className="flex-1 flex items-center gap-2 bg-green-50 rounded-xl px-3 py-2.5">
+                <Shield className="w-4 h-4 text-green-600 flex-shrink-0" />
+                <span className="text-xs text-green-800 font-medium">14 Tage Geld-zurück</span>
               </div>
+              <div className="flex-1 flex items-center gap-2 bg-blue-50 rounded-xl px-3 py-2.5">
+                <RefreshCw className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                <span className="text-xs text-blue-800 font-medium">Keine Auto-Verlängerung</span>
+              </div>
+            </div>
 
-              {/* Guarantee */}
-              <div className="flex items-start gap-3 bg-green-50 rounded-xl p-4">
-                <Shield className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            {/* Error */}
+            {error && (
+              <div className="bg-red-50 text-red-700 p-4 rounded-xl flex items-start gap-3 mb-5 text-sm">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-green-800 text-sm">14 Tage Geld-zurück-Garantie</p>
-                  <p className="text-xs text-green-600">Nicht zufrieden? Volle Erstattung ohne Fragen.</p>
+                  <p>{error}</p>
+                  {error.includes('Sitzung') && (
+                    <Link to="/login" className="text-red-800 underline font-medium mt-1 inline-block">
+                      Zum Login →
+                    </Link>
+                  )}
                 </div>
+              </div>
+            )}
+
+            {/* CTA Button */}
+            <button
+              onClick={handleStripeCheckout}
+              disabled={isProcessing}
+              className="w-full bg-swiss-red hover:bg-swiss-red-dark text-white py-4 rounded-xl font-semibold text-base transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-red-200/50 hover:shadow-red-300/50"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Weiterleitung zu Stripe…
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  Jetzt Mitglied werden – 249€/Jahr
+                </>
+              )}
+            </button>
+
+            {/* Payment methods + security */}
+            <div className="mt-5 flex flex-col items-center gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-7 px-2.5 bg-gray-50 border border-gray-200 rounded flex items-center justify-center text-[10px] font-bold text-gray-500 tracking-wide">VISA</div>
+                <div className="h-7 px-2.5 bg-gray-50 border border-gray-200 rounded flex items-center justify-center text-[10px] font-bold text-gray-500 tracking-wide">MASTERCARD</div>
+                <div className="h-7 px-2.5 bg-gray-50 border border-gray-200 rounded flex items-center justify-center text-[10px] font-bold text-gray-500 tracking-wide">SEPA</div>
+              </div>
+              <div className="flex items-center gap-4 text-gray-400 text-xs">
+                <span className="flex items-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  256-bit SSL
+                </span>
+                <span className="flex items-center gap-1">
+                  <Shield className="w-3 h-3" />
+                  Sichere Zahlung via Stripe
+                </span>
               </div>
             </div>
           </div>

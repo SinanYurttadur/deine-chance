@@ -52,6 +52,9 @@ export const AuthProvider = ({ children }) => {
         if (session?.user) {
           setUser(session.user);
           const userProfile = await loadProfile(session.user.id);
+          if (!userProfile) {
+            console.warn('Profil konnte nicht geladen werden für User:', session.user.id, '– ggf. RLS/Netzwerk prüfen');
+          }
           setProfile(userProfile);
         }
       } catch (err) {
