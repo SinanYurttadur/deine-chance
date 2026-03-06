@@ -35,56 +35,76 @@ const Checkout = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [pendingUser, setPendingUser] = useState(null);
-  const [membershipChecked, setMembershipChecked] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({});
 
   useEffect(() => {
     const pending = getPendingRegistration();
     if (pending) setPendingUser(pending);
   }, []);
 
-  // 1) AuthContext-basierte Weiterleitung
+  // Debug: Profil-Status loggen
   useEffect(() => {
-    if (!isLoading && hasActiveMembership()) {
+    setDebugInfo(prev => ({
+      ...prev,
+      authLoading: isLoading,
+      userId: user?.id || 'null',
+      profileStatus: profile?.membership_status || 'null (Profil nicht geladen)',
+      hasActive: hasActiveMembership(),
+    }));
+  }, [isLoading, user, profile]);
+
+  // Mitgliedschaft prüfen und aktive Mitglieder zum Portal weiterleiten
+  useEffect(() => {
+    if (isLoading) return;
+
+    // 1) AuthContext hat Profil → sofort weiterleiten
+    if (hasActiveMembership()) {
       navigate('/portal', { replace: true });
+      return;
     }
-  }, [isLoading, profile, navigate]);
 
-  // 2) Direkte DB-Prüfung als Fallback – umgeht AuthContext komplett
-  //    Falls AuthContext das Profil nicht laden konnte (RLS-Timing, Race Condition)
-  useEffect(() => {
-    if (isLoading || membershipChecked) return;
-
-    const checkMembershipDirectly = async () => {
+    // 2) Kein Profil trotz Auth → direkte DB-Abfrage
+    const checkDirectly = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user?.id) return;
+        if (!session?.user?.id) {
+          setDebugInfo(prev => ({ ...prev, directCheck: 'Keine Session' }));
+          return;
+        }
 
-        const { data, error } = await supabase
+        const { data, error: queryError } = await supabase
           .from('profiles')
           .select('membership_status')
           .eq('id', session.user.id)
           .single();
 
-        if (error) {
-          console.warn('Checkout: Direkte Profilabfrage fehlgeschlagen:', error.message);
+        if (queryError) {
+          setDebugInfo(prev => ({
+            ...prev,
+            directCheck: `DB-Fehler: ${queryError.code} – ${queryError.message}`,
+          }));
+          console.error('Checkout: Profil-Query fehlgeschlagen:', queryError);
           return;
         }
 
+        setDebugInfo(prev => ({
+          ...prev,
+          directCheck: `OK → membership_status = "${data?.membership_status}"`,
+        }));
+
         if (data?.membership_status === 'active') {
-          console.log('Checkout: Aktive Mitgliedschaft erkannt (Direktabfrage) → Portal');
           navigate('/portal', { replace: true });
         }
       } catch (err) {
-        console.warn('Checkout: Membership-Check Fehler:', err.message);
-      } finally {
-        setMembershipChecked(true);
+        setDebugInfo(prev => ({ ...prev, directCheck: `Exception: ${err.message}` }));
       }
     };
 
-    // Kurz warten damit AuthContext zuerst die Chance hat
-    const timer = setTimeout(checkMembershipDirectly, 800);
-    return () => clearTimeout(timer);
-  }, [isLoading, membershipChecked, navigate]);
+    // Nur prüfen wenn User eingeloggt aber Profil fehlt oder nicht active
+    if (user?.id) {
+      checkDirectly();
+    }
+  }, [isLoading, profile, navigate, user]);
 
   const handleStripeCheckout = useCallback(async () => {
     setIsProcessing(true);
@@ -113,6 +133,8 @@ const Checkout = () => {
         throw new Error('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.');
       }
 
+      setDebugInfo(prev => ({ ...prev, stripeStep: 'Session OK, rufe API...' }));
+
       // API-Call mit Timeout
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
@@ -135,6 +157,8 @@ const Checkout = () => {
       } finally {
         clearTimeout(timeout);
       }
+
+      setDebugInfo(prev => ({ ...prev, stripeStep: `API antwortete: ${response.status}` }));
 
       // Antwort parsen
       let data;
@@ -164,6 +188,7 @@ const Checkout = () => {
       window.location.href = data.url;
     } catch (err) {
       console.error('Checkout Fehler:', err);
+      setDebugInfo(prev => ({ ...prev, stripeStep: `FEHLER: ${err.message}` }));
       setError(err.message || 'Ein unerwarteter Fehler ist aufgetreten.');
       setIsProcessing(false);
     }
@@ -188,6 +213,18 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 py-8 px-4 sm:py-12">
       <div className="max-w-lg mx-auto">
+
+        {/* DEBUG PANEL – nach Debugging entfernen */}
+        {Object.keys(debugInfo).length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-4 mb-4 text-xs font-mono">
+            <p className="font-bold text-yellow-800 mb-2">Debug Info (temporär):</p>
+            {Object.entries(debugInfo).map(([key, val]) => (
+              <p key={key} className="text-yellow-700">
+                <span className="font-semibold">{key}:</span> {String(val)}
+              </p>
+            ))}
+          </div>
+        )}
 
         {/* Back */}
         <Link
