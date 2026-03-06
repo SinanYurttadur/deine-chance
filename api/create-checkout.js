@@ -86,15 +86,24 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ url: session.url });
   } catch (err) {
-    console.error('Checkout error:', err.type || err.name, err.message);
+    console.error('Checkout error:', {
+      type: err.type,
+      name: err.name,
+      message: err.message,
+      code: err.code,
+      statusCode: err.statusCode,
+    });
 
     // Spezifische Stripe-Fehler
     if (err.type === 'StripeAuthenticationError') {
       return res.status(500).json({ error: 'Zahlungssystem-Authentifizierung fehlgeschlagen. Bitte kontaktiere den Support.' });
     }
+    if (err.type === 'StripeInvalidRequestError') {
+      return res.status(500).json({ error: `Stripe-Fehler: ${err.message}` });
+    }
 
     return res.status(500).json({
-      error: 'Checkout konnte nicht erstellt werden. Bitte versuche es erneut.',
+      error: err.message || 'Checkout konnte nicht erstellt werden. Bitte versuche es erneut.',
     });
   }
 }
