@@ -562,23 +562,22 @@ const KnowledgeSection = ({ setActiveTab }) => {
                 </div>
               </div>
 
-              {/* Community Hint */}
+              {/* Alpi Hint */}
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-swiss-red/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <MessageCircle className="w-5 h-5 text-swiss-red" />
+                <button
+                  onClick={() => setActiveTab('community')}
+                  className="w-full flex items-center gap-3 text-left group"
+                >
+                  <div className="w-10 h-10 bg-gradient-to-br from-swiss-red to-red-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">🏔️</span>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Fragen?</p>
-                    <p className="text-xs text-gray-500 mb-2">Die Community hilft dir weiter!</p>
-                    <button
-                      onClick={() => setActiveTab('community')}
-                      className="text-swiss-red text-xs font-semibold hover:underline flex items-center gap-1"
-                    >
-                      Zum Forum <ArrowRight className="w-3 h-3" />
-                    </button>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">Fragen zu diesem Kapitel?</p>
+                    <p className="text-xs text-swiss-red font-semibold group-hover:underline flex items-center gap-1">
+                      Frag Alpi <ArrowRight className="w-3 h-3" />
+                    </p>
                   </div>
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -737,29 +736,20 @@ const KnowledgeSection = ({ setActiveTab }) => {
         </div>
       )}
 
-      {/* Community Banner */}
-      <div className="bg-gradient-to-br from-swiss-red to-red-600 rounded-[2rem] p-8 md:p-10 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-        <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-          <div className="w-20 h-20 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center flex-shrink-0">
-            <Users className="w-10 h-10" />
-          </div>
-          <div className="flex-1 text-center md:text-left">
-            <h3 className="text-2xl font-bold mb-2">Lerne von der Community</h3>
-            <p className="text-white/80">
-              Hunderte Menschen haben diesen Weg bereits gemeistert. Tausche dich aus,
-              stelle Fragen und profitiere von echten Erfahrungen.
-            </p>
-          </div>
-          <button
-            onClick={() => setActiveTab('community')}
-            className="bg-white text-swiss-red px-6 py-4 rounded-xl font-bold hover:bg-gray-100 transition-colors flex items-center gap-2 shadow-xl flex-shrink-0"
-          >
-            Zur Community
-            <ArrowRight className="w-5 h-5" />
-          </button>
+      {/* Alpi CTA Banner */}
+      <button
+        onClick={() => setActiveTab('community')}
+        className="w-full bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-5 flex items-center gap-4 text-left group hover:shadow-lg transition-shadow"
+      >
+        <div className="w-11 h-11 bg-gradient-to-br from-swiss-red to-red-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+          <span className="text-lg">🏔️</span>
         </div>
-      </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-white font-semibold text-sm">Fragen zum Thema? Alpi erklärt dir alles Schritt für Schritt.</p>
+          <p className="text-gray-400 text-xs mt-0.5">Alpi – Dein Auswanderer-Berater</p>
+        </div>
+        <ArrowRight className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors flex-shrink-0" />
+      </button>
     </div>
   );
 };
