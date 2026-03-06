@@ -15,17 +15,13 @@ import {
   Users,
   Settings,
   LogOut,
-  Bell,
+
   Search,
   ChevronRight,
-  MapPin,
-  Building2,
-  Clock,
   Star,
   Download,
   Play,
   Calendar,
-  MessageCircle,
   TrendingUp,
   CheckCircle,
   ExternalLink,
@@ -80,40 +76,6 @@ const popularFields = [
   { name: 'Gastronomie & Hotel', query: 'gastro+hotel', icon: '🍽️' }
 ];
 
-// Community Job-Empfehlungen (von Mitgliedern geteilt)
-const communityJobs = [
-  {
-    id: 1,
-    title: 'Suche Elektriker für unser Team',
-    company: 'Firma eines Mitglieds',
-    location: 'Winterthur',
-    type: 'Vollzeit',
-    sharedBy: 'Marco S.',
-    date: '2024-12-10',
-    contact: 'Nachricht im Forum'
-  },
-  {
-    id: 2,
-    title: 'IT-Support gesucht',
-    company: 'Startup (Kontakt über Community)',
-    location: 'Zürich',
-    type: 'Vollzeit',
-    sharedBy: 'Anna K.',
-    date: '2024-12-09',
-    contact: 'Nachricht im Forum'
-  },
-  {
-    id: 3,
-    title: 'Pflegefachperson für Spitex',
-    company: 'Empfehlung von Mitglied',
-    location: 'Bern',
-    type: 'Teilzeit möglich',
-    sharedBy: 'Julia M.',
-    date: '2024-12-08',
-    contact: 'Nachricht im Forum'
-  }
-];
-
 // Alle Vorlagen aus communityData flach als Array
 const getAllTemplates = () => {
   const allTemplates = [];
@@ -129,6 +91,23 @@ const getAllTemplates = () => {
   return allTemplates;
 };
 
+
+// Alpi CTA banner – reused across tabs
+const AlpiCTA = ({ text, onClick }) => (
+  <button
+    onClick={onClick}
+    className="w-full bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-5 flex items-center gap-4 text-left group hover:shadow-lg transition-shadow"
+  >
+    <div className="w-11 h-11 bg-gradient-to-br from-swiss-red to-red-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+      <span className="text-lg">🏔️</span>
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-white font-semibold text-sm">{text}</p>
+      <p className="text-gray-400 text-xs mt-0.5">Alpi – Dein Auswanderer-Berater</p>
+    </div>
+    <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors flex-shrink-0" />
+  </button>
+);
 
 // Category filter keys matching template object keys
 const categoryFilters = [
@@ -292,20 +271,10 @@ const DocumentsSection = () => {
         </div>
       )}
 
-      {/* Pro Tip */}
-      <div className="bg-gradient-to-r from-swiss-red to-red-600 rounded-2xl p-6 text-white flex flex-col md:flex-row items-start gap-4">
-        <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-          <span className="text-2xl">💡</span>
-        </div>
-        <div>
-          <h3 className="font-bold mb-1">Tipp: Lass dir helfen!</h3>
-          <p className="text-white/80 text-sm">
-            Unsicher bei der Bewerbung? Frag den Auswanderer-Berater –
-            er kennt die Schweizer Standards und hilft dir bei Lebenslauf,
-            Motivationsschreiben und mehr!
-          </p>
-        </div>
-      </div>
+      <AlpiCTA
+        text="Unsicher bei der Bewerbung? Frag Alpi – er hilft dir bei Lebenslauf, Anschreiben und mehr."
+        onClick={() => setActiveTab('community')}
+      />
     </div>
   );
 };
@@ -539,10 +508,6 @@ const Portal = () => {
             </div>
 
             <div className="flex items-center gap-4">
-              <button className="relative p-2 hover:bg-gray-100 rounded-lg">
-                <Bell className="w-6 h-6 text-gray-600" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-swiss-red rounded-full"></span>
-              </button>
             </div>
           </div>
         </header>
@@ -576,7 +541,7 @@ const Portal = () => {
                 {[
                   { label: 'Video-Module', value: '0/8', icon: Play, change: 'Video-Akademie starten', onClick: () => setActiveTab('webinars') },
                   { label: 'Wissen', value: '0/13', icon: BookOpen, change: 'Kapitel lesen', onClick: () => setActiveTab('knowledge') },
-                  { label: 'Community', value: 'Aktiv', icon: Users, change: 'Beiträge entdecken', onClick: () => setActiveTab('community') },
+                  { label: 'Alpi', value: '24/7', icon: Bot, change: 'Frag deinen Berater', onClick: () => setActiveTab('community') },
                   { label: 'Vorlagen', value: '13', icon: FileText, change: 'Downloads verfügbar', onClick: () => setActiveTab('documents') }
                 ].map((stat, i) => {
                   const Icon = stat.icon;
@@ -612,7 +577,7 @@ const Portal = () => {
                     {[
                       { step: 1, title: 'Einführungsvideo ansehen', description: 'Lerne die Plattform kennen', tab: 'webinars', icon: Play, done: false },
                       { step: 2, title: 'Wissensbibliothek starten', description: 'Phase 1: Entscheidung durcharbeiten', tab: 'knowledge', icon: BookOpen, done: false },
-                      { step: 3, title: 'Community beitreten', description: 'Stelle dich vor und vernetze dich', tab: 'community', icon: Users, done: false },
+                      { step: 3, title: 'Alpi fragen', description: 'Dein persönlicher Auswanderer-Berater hilft dir weiter', tab: 'community', icon: Bot, done: false },
                       { step: 4, title: 'Vorlagen herunterladen', description: 'Bewerbung & Lebenslauf vorbereiten', tab: 'documents', icon: Download, done: false },
                       { step: 5, title: 'Jobsuche starten', description: 'Nutze unsere Jobportal-Links', tab: 'jobs', icon: Briefcase, done: false }
                     ].map((item) => {
@@ -703,7 +668,7 @@ const Portal = () => {
               {/* Header */}
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Jobsuche Schweiz</h1>
-                <p className="text-gray-600 mt-1">Finde deinen Traumjob über die besten Schweizer Jobportale und unsere Community.</p>
+                <p className="text-gray-600 mt-1">Finde deinen Traumjob über die besten Schweizer Jobportale.</p>
               </div>
 
               {/* Job Portals Grid */}
@@ -747,90 +712,10 @@ const Portal = () => {
                 </div>
               </div>
 
-              {/* Community Jobs */}
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                  <div>
-                    <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                      <Users className="w-5 h-5 text-swiss-red" />
-                      Jobs aus der Community
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-1">Von Mitgliedern geteilte Stellen und Empfehlungen</p>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('community')}
-                    className="text-swiss-red text-sm font-medium hover:underline flex items-center gap-1"
-                  >
-                    Eigenen Job teilen <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="divide-y divide-gray-100">
-                  {communityJobs.map((job) => (
-                    <div key={job.id} className="p-6 hover:bg-gray-50 transition-colors">
-                      <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="w-12 h-12 bg-swiss-red/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <MessageCircle className="w-6 h-6 text-swiss-red" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                            <div>
-                              <h3 className="font-semibold text-gray-900 text-lg">{job.title}</h3>
-                              <p className="text-gray-600">{job.company}</p>
-                            </div>
-                            <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                              <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                              Neu
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" /> {job.location}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Building2 className="w-4 h-4" /> {job.type}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" /> {job.date}
-                            </span>
-                          </div>
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                            <p className="text-sm text-gray-600">
-                              Geteilt von <span className="font-medium text-gray-900">{job.sharedBy}</span>
-                            </p>
-                            <button
-                              onClick={() => setActiveTab('community')}
-                              className="mt-2 sm:mt-0 bg-swiss-red hover:bg-swiss-red-dark text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                            >
-                              Im Forum kontaktieren
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Tips Banner */}
-              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-2xl p-6 flex flex-col md:flex-row items-start gap-4">
-                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl">💡</span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 mb-1">Tipp: Nutze das Netzwerk!</h3>
-                  <p className="text-gray-600 text-sm">
-                    Viele Jobs in der Schweiz werden über persönliche Empfehlungen vergeben.
-                    Stelle dich in unserer Community vor und erzähle, was du suchst –
-                    unsere Mitglieder haben oft Insider-Tipps!
-                  </p>
-                  <button
-                    onClick={() => setActiveTab('community')}
-                    className="mt-3 text-swiss-red font-medium text-sm hover:underline flex items-center gap-1"
-                  >
-                    Zur Community <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+              <AlpiCTA
+                text="Fragen zur Jobsuche in der Schweiz? Alpi hilft dir mit Tipps zu Bewerbung, Gehalt und Arbeitsmarkt."
+                onClick={() => setActiveTab('community')}
+              />
             </div>
           )}
 
@@ -880,6 +765,10 @@ const Portal = () => {
                   </div>
                 </div>
               ))}
+              <AlpiCTA
+                text="Nicht sicher, welche Seite du brauchst? Frag Alpi – er kennt alle wichtigen Behörden und Portale."
+                onClick={() => setActiveTab('community')}
+              />
             </div>
           )}
 
@@ -905,9 +794,6 @@ const Portal = () => {
                       <p className="text-gray-500">{user.email}</p>
                     </div>
                   </div>
-                  <button className="text-swiss-red font-medium hover:underline">
-                    Profil bearbeiten
-                  </button>
                 </div>
 
                 <div className="p-6">
@@ -924,6 +810,12 @@ const Portal = () => {
                   <p className="text-sm text-gray-500 mt-3">
                     Mitgliedsnummer: <span className="font-mono">{user.certificateNumber}</span>
                   </p>
+                  <Link
+                    to="/kuendigen"
+                    className="inline-block mt-4 text-sm text-gray-400 hover:text-red-500 hover:underline transition-colors"
+                  >
+                    Mitgliedschaft beenden
+                  </Link>
                 </div>
 
                 <div className="p-6">
