@@ -201,12 +201,6 @@ const Cancel = () => {
               })}
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8">
-              <p className="text-amber-800 text-sm">
-                <strong>Hinweis:</strong> Gemäß unserer Beitragsordnung §5 gilt: Innerhalb von 14 Tagen nach Beitritt ist eine volle Rückerstattung möglich. Nach Ablauf der 14-Tage-Frist ist eine Rückerstattung ausgeschlossen.
-              </p>
-            </div>
-
             <div className="flex gap-4">
               <button
                 onClick={() => setStep(1)}

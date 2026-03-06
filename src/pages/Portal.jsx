@@ -32,7 +32,8 @@ import {
   Calculator,
   Bot,
   Eye,
-  Copy
+  Copy,
+  AlertTriangle
 } from 'lucide-react';
 
 // Job Portals für die Schweiz
@@ -837,24 +838,38 @@ const Portal = () => {
 
                 <div className="p-6">
                   <h2 className="font-semibold text-gray-900 mb-4">Mitgliedschaft</h2>
-                  <div className="bg-green-50 rounded-lg p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="w-6 h-6 text-green-600" />
-                      <div>
-                        <p className="font-medium text-green-800">Aktive Mitgliedschaft</p>
-                        <p className="text-sm text-green-600">Mitglied seit {new Date(user.accessGrantedAt).toLocaleDateString('de-DE')}</p>
+                  {user.cancelled_at && user.membershipStatus === 'active' ? (
+                    <div className="bg-amber-50 rounded-lg p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <AlertTriangle className="w-6 h-6 text-amber-600" />
+                        <div>
+                          <p className="font-medium text-amber-800">Gekündigt – Zugang bis Laufzeitende</p>
+                          <p className="text-sm text-amber-600">Mitglied seit {new Date(user.accessGrantedAt).toLocaleDateString('de-DE')}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="bg-green-50 rounded-lg p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="w-6 h-6 text-green-600" />
+                          <div>
+                            <p className="font-medium text-green-800">Aktive Mitgliedschaft</p>
+                            <p className="text-sm text-green-600">Mitglied seit {new Date(user.accessGrantedAt).toLocaleDateString('de-DE')}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <Link
+                        to="/kuendigen"
+                        className="inline-block mt-4 text-sm text-gray-400 hover:text-red-500 hover:underline transition-colors"
+                      >
+                        Mitgliedschaft beenden
+                      </Link>
+                    </>
+                  )}
                   <p className="text-sm text-gray-500 mt-3">
                     Mitgliedsnummer: <span className="font-mono">{user.certificateNumber}</span>
                   </p>
-                  <Link
-                    to="/kuendigen"
-                    className="inline-block mt-4 text-sm text-gray-400 hover:text-red-500 hover:underline transition-colors"
-                  >
-                    Mitgliedschaft beenden
-                  </Link>
                 </div>
 
                 <div className="p-6">
