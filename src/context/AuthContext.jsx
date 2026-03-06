@@ -18,7 +18,9 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   // Lade Benutzerprofil aus der Datenbank
+  // Erst direkte Abfrage, dann RPC-Fallback (umgeht RLS-Probleme)
   const loadProfile = async (userId) => {
+    // 1) Direkte Abfrage (Standard)
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -26,13 +28,37 @@ export const AuthProvider = ({ children }) => {
         .eq('id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Profil laden fehlgeschlagen:', error);
+      if (!error && data) {
+        return data;
+      }
+
+      if (error) {
+        console.warn('Profil direkt laden fehlgeschlagen:', error.code, error.message);
+      }
+    } catch (err) {
+      console.warn('Profil direkt laden Exception:', err.message);
+    }
+
+    // 2) Fallback: RPC-Funktion (SECURITY DEFINER, umgeht RLS)
+    try {
+      const { data, error } = await supabase.rpc('get_own_profile');
+
+      if (error) {
+        console.error('Profil RPC fehlgeschlagen:', error.code, error.message);
         return null;
       }
-      return data;
+
+      // RPC gibt Array zurück, wir brauchen das erste Element
+      const profile = Array.isArray(data) ? data[0] : data;
+      if (profile) {
+        console.log('Profil über RPC geladen (Fallback)');
+        return profile;
+      }
+
+      console.warn('Kein Profil gefunden für User:', userId);
+      return null;
     } catch (err) {
-      console.error('Profil laden fehlgeschlagen:', err);
+      console.error('Profil RPC Exception:', err.message);
       return null;
     }
   };
