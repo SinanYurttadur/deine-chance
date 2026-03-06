@@ -42,15 +42,54 @@ const Checkout = () => {
     if (pending) setPendingUser(pending);
   }, []);
 
-  // Debug: Profil-Status loggen
+  // Debug: Profil-Status + direkte DB-Tests
   useEffect(() => {
-    setDebugInfo(prev => ({
-      ...prev,
+    const info = {
       authLoading: isLoading,
       userId: user?.id || 'null',
       profileStatus: profile?.membership_status || 'null (Profil nicht geladen)',
       hasActive: hasActiveMembership(),
-    }));
+    };
+    setDebugInfo(info);
+
+    // Direkte Tests wenn User eingeloggt
+    if (!isLoading && user?.id) {
+      // Test 1: Direkte Tabellen-Abfrage
+      supabase
+        .from('profiles')
+        .select('membership_status')
+        .eq('id', user.id)
+        .single()
+        .then(({ data, error }) => {
+          setDebugInfo(prev => ({
+            ...prev,
+            'query.profiles': error
+              ? `FEHLER: ${error.code} – ${error.message}`
+              : `OK: ${data?.membership_status}`,
+          }));
+        });
+
+      // Test 2: RPC Funktion
+      supabase
+        .rpc('get_own_profile')
+        .then(({ data, error }) => {
+          setDebugInfo(prev => ({
+            ...prev,
+            'rpc.get_own_profile': error
+              ? `FEHLER: ${error.code} – ${error.message}`
+              : `OK: ${Array.isArray(data) ? data[0]?.membership_status : 'kein Array'}`,
+          }));
+        });
+
+      // Test 3: Session-Token vorhanden?
+      supabase.auth.getSession().then(({ data }) => {
+        const token = data?.session?.access_token;
+        setDebugInfo(prev => ({
+          ...prev,
+          'session.token': token ? `vorhanden (${token.slice(0, 20)}...)` : 'FEHLT',
+        }));
+      });
+    }
   }, [isLoading, user, profile]);
 
   // Mitgliedschaft prüfen und aktive Mitglieder zum Portal weiterleiten
