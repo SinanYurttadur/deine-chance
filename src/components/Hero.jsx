@@ -82,8 +82,8 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* Right Content - Animated Journey Illustration */}
-          <div className="order-1 lg:order-2 relative">
+          {/* Right Content - Animated Journey Illustration (hidden on mobile) */}
+          <div className="hidden lg:block order-1 lg:order-2 relative">
             <div className="relative w-full max-w-lg mx-auto">
               {/* Background decorations */}
               <div className="absolute -top-10 -right-10 w-72 h-72 bg-red-100 rounded-full blur-3xl opacity-60"></div>
