@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { jsPDF } from 'jspdf';
 import {
   Calculator,
   TrendingUp,
@@ -13,7 +14,8 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
-  Check
+  Check,
+  Download
 } from 'lucide-react';
 
 // Steuer- und Abgabensätze (vereinfacht)
@@ -176,6 +178,115 @@ const SalaryCalculator = () => {
     { code: 'AG', name: 'Aargau' },
     { code: 'SG', name: 'St. Gallen' }
   ];
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 20;
+
+    const fmt = (n) => Math.round(n).toLocaleString('de-DE');
+    const fmtCHF = (n) => Math.round(n).toLocaleString('de-CH');
+    const kantonName = kantone.find(k => k.code === kanton)?.name || kanton;
+
+    // Title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Gehaltsvergleich Deutschland – Schweiz', pageWidth / 2, y, { align: 'center' });
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text('Erstellt mit Deine Chance e.V.', pageWidth / 2, y, { align: 'center' });
+    y += 14;
+
+    // Germany Section
+    doc.setTextColor(0);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Deutschland', 20, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const deRows = [
+      ['Brutto/Jahr', `${fmt(germanyGross)} EUR`],
+      ['Sozialabgaben', `-${fmt(germanyCalc.socialContributions)} EUR`],
+      ['Einkommensteuer', `-${fmt(germanyCalc.incomeTax)} EUR`],
+      ['Netto/Monat', `${fmt(germanyCalc.netMonthly)} EUR`],
+      ['Lebenshaltungskosten', `-${fmt(germanyCalc.livingCosts)} EUR`],
+      ['Verfuegbar/Monat', `${fmt(germanyCalc.disposable)} EUR`],
+    ];
+    deRows.forEach(([label, value]) => {
+      doc.text(label, 25, y);
+      doc.text(value, pageWidth - 25, y, { align: 'right' });
+      y += 6;
+    });
+    doc.text(`Abgabenquote: ${germanyCalc.taxRate}%`, 25, y);
+    y += 12;
+
+    // Switzerland Section
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Schweiz (Kanton ${kantonName})`, 20, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const chRows = [
+      ['Brutto/Jahr', `${fmtCHF(switzerlandGross)} CHF`],
+      ['AHV/ALV/BVG', `-${fmtCHF(switzerlandCalc.socialContributions)} CHF`],
+      [`Quellensteuer (${kanton})`, `-${fmtCHF(switzerlandCalc.sourceTax)} CHF`],
+      ['Netto/Monat', `${fmtCHF(switzerlandCalc.netMonthly)} CHF`],
+      ['  (in EUR)', `${fmt(switzerlandCalc.netMonthlyEur)} EUR`],
+      ['Lebenshaltung + KK', `-${fmtCHF(switzerlandCalc.livingCosts)} CHF`],
+      ['Verfuegbar/Monat', `${fmtCHF(switzerlandCalc.disposable)} CHF`],
+      ['  (in EUR)', `${fmt(switzerlandCalc.disposableEur)} EUR`],
+    ];
+    chRows.forEach(([label, value]) => {
+      doc.text(label, 25, y);
+      doc.text(value, pageWidth - 25, y, { align: 'right' });
+      y += 6;
+    });
+    doc.text(`Abgabenquote: ${switzerlandCalc.taxRate}%`, 25, y);
+    y += 14;
+
+    // Summary
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Zusammenfassung', 20, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Netto-Differenz/Monat: ${comparison.netDiff > 0 ? '+' : ''}${fmt(comparison.netDiff)} EUR (${comparison.netDiffPercent}%)`, 25, y);
+    y += 6;
+    doc.text(`Verfuegbar-Differenz/Monat: ${comparison.disposableDiff > 0 ? '+' : ''}${fmt(comparison.disposableDiff)} EUR (${comparison.disposableDiffPercent}%)`, 25, y);
+    y += 6;
+    doc.setFont('helvetica', 'bold');
+    doc.text(
+      comparison.worthIt
+        ? 'Ergebnis: Lohnt sich! Du hast mehr zum Leben in der Schweiz.'
+        : 'Ergebnis: Knapp – pruefe genauer und verhandle ein hoeheres Gehalt.',
+      25, y
+    );
+    y += 14;
+
+    // Disclaimer
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(120);
+    const disclaimer = `Hinweis: Diese Berechnung dient zur Orientierung. Die tatsaechlichen Abgaben koennen je nach persoenlicher Situation, Familienstand, Kanton und Gemeinde variieren. Quellensteuer gilt fuer Auslaender ohne C-Bewilligung. Wechselkurs: 1 CHF = ${EXCHANGE_RATE} EUR.`;
+    const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 40);
+    doc.text(disclaimerLines, 20, y);
+    y += disclaimerLines.length * 4 + 6;
+
+    // Date
+    const now = new Date();
+    doc.text(`Erstellt am ${now.toLocaleDateString('de-DE')} um ${now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`, 20, y);
+
+    doc.save('Gehaltsvergleich-DE-CH.pdf');
+  };
 
   return (
     <div className="space-y-8">
@@ -455,16 +566,25 @@ const SalaryCalculator = () => {
       )}
 
       {/* Disclaimer */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3">
-        <Info className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-yellow-800">
-          <p className="font-medium mb-1">Hinweis</p>
-          <p>
-            Diese Berechnung dient zur Orientierung. Die tatsächlichen Abgaben können je nach
-            persönlicher Situation, Familienstand, Kanton und Gemeinde variieren. Quellensteuer
-            gilt für Ausländer ohne C-Bewilligung. Wechselkurs: 1 CHF ≈ {EXCHANGE_RATE} EUR.
-          </p>
+      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex flex-col gap-4">
+        <div className="flex items-start gap-3">
+          <Info className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-yellow-800">
+            <p className="font-medium mb-1">Hinweis</p>
+            <p>
+              Diese Berechnung dient zur Orientierung. Die tatsächlichen Abgaben können je nach
+              persönlicher Situation, Familienstand, Kanton und Gemeinde variieren. Quellensteuer
+              gilt für Ausländer ohne C-Bewilligung. Wechselkurs: 1 CHF ≈ {EXCHANGE_RATE} EUR.
+            </p>
+          </div>
         </div>
+        <button
+          onClick={exportPDF}
+          className="self-end flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+        >
+          <Download className="w-4 h-4" />
+          PDF exportieren
+        </button>
       </div>
 
       {/* Key Takeaways */}

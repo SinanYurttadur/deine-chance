@@ -3,41 +3,37 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import usePageTitle from '../hooks/usePageTitle';
-import { templates, usefulLinks } from '../data/communityData';
+import { usefulLinks } from '../data/communityData';
 import KnowledgeSection from '../components/KnowledgeSection';
 import CommunitySection from '../components/CommunitySection';
 import SalaryCalculator from '../components/SalaryCalculator';
 import VideoAcademy from '../components/VideoAcademy';
+import AlpiCTA from '../components/AlpiCTA';
+import DocumentsSection, { getAllTemplates } from '../components/DocumentsSection';
 import { jsPDF } from 'jspdf';
 import {
   LayoutDashboard,
   Briefcase,
   FileText,
-  Users,
   Settings,
   LogOut,
-
   Search,
   ChevronRight,
-  Star,
   Download,
   Play,
-  Calendar,
-  TrendingUp,
   CheckCircle,
   ExternalLink,
   Menu,
-  X,
   BookOpen,
   Calculator,
   Bot,
-  Eye,
   Copy,
   AlertTriangle,
   Share2,
   MessageCircle,
   Mail,
-  Heart
+  Heart,
+  Pencil
 } from 'lucide-react';
 
 // Job Portals für die Schweiz
@@ -82,208 +78,6 @@ const popularFields = [
   { name: 'Gastronomie & Hotel', query: 'gastro+hotel', icon: '🍽️' }
 ];
 
-// Alle Vorlagen aus communityData flach als Array
-const getAllTemplates = () => {
-  const allTemplates = [];
-  Object.values(templates).forEach(category => {
-    category.items.forEach(item => {
-      allTemplates.push({
-        ...item,
-        category: category.title,
-        categoryEmoji: category.emoji
-      });
-    });
-  });
-  return allTemplates;
-};
-
-
-// Alpi CTA banner – reused across tabs
-const AlpiCTA = ({ text, onClick }) => (
-  <button
-    onClick={onClick}
-    className="w-full bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-5 flex items-center gap-4 text-left group hover:shadow-lg transition-shadow"
-  >
-    <div className="w-11 h-11 bg-gradient-to-br from-swiss-red to-red-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-      <span className="text-lg">🏔️</span>
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-white font-semibold text-sm">{text}</p>
-      <p className="text-gray-400 text-xs mt-0.5">Alpi – Dein Auswanderer-Berater</p>
-    </div>
-    <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors flex-shrink-0" />
-  </button>
-);
-
-// Category filter keys matching template object keys
-const categoryFilters = [
-  { key: null, label: 'Alle' },
-  { key: 'bewerbung', label: 'Bewerbung' },
-  { key: 'wohnung', label: 'Wohnung' },
-  { key: 'steuern', label: 'Steuern' },
-  { key: 'familie', label: 'Familie' },
-];
-
-// Documents Section Component
-const DocumentsSection = () => {
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [viewTemplate, setViewTemplate] = useState(null);
-  const [copied, setCopied] = useState(false);
-
-  const downloadTemplate = (template) => {
-    const blob = new Blob([template.content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${template.id}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const copyContent = async (content) => {
-    try {
-      await navigator.clipboard.writeText(content);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // fallback
-      const ta = document.createElement('textarea');
-      ta.value = content;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  // Filter templates by active category
-  const filteredCategories = activeCategory
-    ? { [activeCategory]: templates[activeCategory] }
-    : templates;
-
-  return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Vorlagen & Checklisten</h1>
-          <p className="text-gray-600 mt-1">Alle Vorlagen für deine Auswanderung – kostenlos als Mitglied.</p>
-        </div>
-        <div className="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-xl text-sm font-medium">
-          <CheckCircle className="w-4 h-4" />
-          {getAllTemplates().length} Vorlagen verfügbar
-        </div>
-      </div>
-
-      {/* Category Tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {categoryFilters.map(cat => (
-          <button
-            key={cat.label}
-            onClick={() => setActiveCategory(cat.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-              activeCategory === cat.key
-                ? 'bg-swiss-red text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Template List */}
-      <div className="space-y-4">
-        {Object.values(filteredCategories).flatMap(category =>
-          category.items.map(template => (
-            <div key={template.id} className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-swiss-red/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-5 h-5 text-swiss-red" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">{template.type} • {template.downloads.toLocaleString()} Downloads</p>
-                  <p className="text-sm text-gray-600 mt-2">{template.description}</p>
-                  <div className="flex gap-3 mt-4">
-                    <button
-                      onClick={() => { setViewTemplate(template); setCopied(false); }}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-swiss-red hover:text-white text-gray-700 transition-colors"
-                    >
-                      <Eye className="w-4 h-4" />
-                      Anzeigen
-                    </button>
-                    <button
-                      onClick={() => downloadTemplate(template)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-swiss-red hover:text-white text-gray-700 transition-colors"
-                    >
-                      <Download className="w-4 h-4" />
-                      Herunterladen
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* View Modal */}
-      {viewTemplate && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setViewTemplate(null)}>
-          <div
-            className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-swiss-red/10 rounded-xl flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-swiss-red" />
-                </div>
-                <h2 className="font-bold text-gray-900">{viewTemplate.name}</h2>
-              </div>
-              <button onClick={() => setViewTemplate(null)} className="p-2 hover:bg-gray-100 rounded-lg">
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 bg-gray-50 rounded-xl p-4 leading-relaxed">
-                {viewTemplate.content}
-              </pre>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
-              <button
-                onClick={() => copyContent(viewTemplate.content)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-swiss-red hover:bg-swiss-red-dark text-white transition-colors"
-              >
-                <Copy className="w-4 h-4" />
-                {copied ? 'Kopiert!' : 'Kopieren'}
-              </button>
-              <button
-                onClick={() => setViewTemplate(null)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
-              >
-                Schließen
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <AlpiCTA
-        text="Unsicher bei der Bewerbung? Frag Alpi – er hilft dir bei Lebenslauf, Anschreiben und mehr."
-        onClick={() => setActiveTab('community')}
-      />
-    </div>
-  );
-};
 
 const Portal = () => {
   usePageTitle('Mein Portal');
@@ -294,6 +88,34 @@ const Portal = () => {
   const [completedChapters, setCompletedChapters] = useState([]);
   const [linkCopied, setLinkCopied] = useState(false);
   const [messageCopied, setMessageCopied] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+
+  // Search handler: navigate to the most relevant tab based on keywords
+  const handleSearch = (query) => {
+    const q = query.toLowerCase().trim();
+    if (!q) return;
+
+    const tabKeywords = {
+      jobs: ['job', 'jobs', 'stelle', 'stellen', 'stellenangebot', 'arbeit', 'beruf', 'karriere', 'bewerbung', 'arbeitsmarkt'],
+      documents: ['dokument', 'vorlage', 'vorlagen', 'template', 'checkliste', 'download', 'lebenslauf', 'anschreiben', 'muster'],
+      knowledge: ['wissen', 'bibliothek', 'kapitel', 'lernen', 'guide', 'ratgeber', 'phase', 'auswandern', 'umzug'],
+      calculator: ['rechner', 'calculator', 'gehalt', 'salary', 'lohn', 'netto', 'brutto', 'steuer'],
+      webinars: ['video', 'videos', 'akademie', 'modul', 'module', 'kurs', 'tutorial', 'webinar'],
+    };
+
+    for (const [tab, keywords] of Object.entries(tabKeywords)) {
+      if (keywords.some(kw => q.includes(kw))) {
+        setActiveTab(tab);
+        setSearchQuery('');
+        return;
+      }
+    }
+  };
 
   // Load chapter progress from Supabase on mount
   useEffect(() => {
@@ -406,7 +228,7 @@ const Portal = () => {
     doc.setTextColor(220, 38, 38);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Mitgliedsnummer: ${user.certificateNumber || user.certificate_number || 'DC-2024-XXXXX'}`, width / 2, 152, { align: 'center' });
+    doc.text(`Mitgliedsnummer: ${user.certificateNumber || user.certificate_number || 'Wird generiert'}`, width / 2, 152, { align: 'center' });
 
     // Datum
     const memberSince = user.accessGrantedAt || user.access_granted_at || user.created_at;
@@ -428,7 +250,7 @@ const Portal = () => {
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { id: 'knowledge', name: 'Wissensbibliothek', icon: BookOpen, badge: '13' },
-    { id: 'jobs', name: 'Stellenangebote', icon: Briefcase, badge: '523' },
+    { id: 'jobs', name: 'Stellenangebote', icon: Briefcase, badge: '500+' },
     { id: 'calculator', name: 'Gehaltsrechner', icon: Calculator, badge: 'Neu' },
     { id: 'documents', name: 'Vorlagen & Checklisten', icon: FileText },
     { id: 'community', name: 'Alpi – Berater', icon: Bot },
@@ -546,6 +368,9 @@ const Portal = () => {
                   type="search"
                   placeholder="Jobs, Dokumente suchen..."
                   className="pl-10 pr-4 py-2 w-64 lg:w-96 border border-gray-200 rounded-xl focus:outline-none focus:border-swiss-red"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(searchQuery); }}
                 />
               </div>
             </div>
@@ -582,8 +407,8 @@ const Portal = () => {
               {/* Onboarding Progress Stats */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { label: 'Video-Module', value: '0/8', icon: Play, change: 'Video-Akademie starten', onClick: () => setActiveTab('webinars') },
-                  { label: 'Wissen', value: '0/13', icon: BookOpen, change: 'Kapitel lesen', onClick: () => setActiveTab('knowledge') },
+                  { label: 'Video-Module', value: `${Math.min(parseInt(localStorage.getItem('deinechance_video_step') || '0', 10), 12)}/12`, icon: Play, change: 'Video-Akademie starten', onClick: () => setActiveTab('webinars') },
+                  { label: 'Wissen', value: `${completedChapters.length}/13`, icon: BookOpen, change: 'Kapitel lesen', onClick: () => setActiveTab('knowledge') },
                   { label: 'Alpi', value: '24/7', icon: Bot, change: 'Frag deinen Berater', onClick: () => setActiveTab('community') },
                   { label: 'Vorlagen', value: '13', icon: FileText, change: 'Downloads verfügbar', onClick: () => setActiveTab('documents') }
                 ].map((stat, i) => {
@@ -773,7 +598,7 @@ const Portal = () => {
 
           {/* Documents Tab */}
           {activeTab === 'documents' && (
-            <DocumentsSection />
+            <DocumentsSection setActiveTab={setActiveTab} />
           )}
 
           {/* Community Tab */}
@@ -927,16 +752,104 @@ const Portal = () => {
 
               <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-100">
                 <div className="p-6">
-                  <h2 className="font-semibold text-gray-900 mb-4">Profil</h2>
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 bg-swiss-red rounded-full flex items-center justify-center text-white text-xl font-bold">
-                      {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
-                      <p className="text-gray-500">{user.email}</p>
-                    </div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-semibold text-gray-900">Profil</h2>
+                    {!editingProfile && (
+                      <button
+                        onClick={() => {
+                          setEditFirstName(user.firstName || '');
+                          setEditLastName(user.lastName || '');
+                          setEditingProfile(true);
+                          setProfileSaved(false);
+                        }}
+                        className="text-gray-400 hover:text-swiss-red transition-colors"
+                        title="Profil bearbeiten"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
+
+                  {editingProfile ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4 mb-2">
+                        <div className="w-16 h-16 bg-swiss-red rounded-full flex items-center justify-center text-white text-xl font-bold">
+                          {editFirstName?.charAt(0)}{editLastName?.charAt(0)}
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <div>
+                            <label className="block text-sm text-gray-500 mb-1">Vorname</label>
+                            <input
+                              type="text"
+                              value={editFirstName}
+                              onChange={(e) => setEditFirstName(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-swiss-red focus:border-transparent outline-none transition-all"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm text-gray-500 mb-1">Nachname</label>
+                            <input
+                              type="text"
+                              value={editLastName}
+                              onChange={(e) => setEditLastName(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-swiss-red focus:border-transparent outline-none transition-all"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-400">{user.email}</p>
+                      <div className="flex items-center gap-3 pt-1">
+                        <button
+                          onClick={async () => {
+                            if (!editFirstName.trim() || !editLastName.trim()) {
+                              alert('Bitte gib Vor- und Nachname ein.');
+                              return;
+                            }
+                            setProfileSaving(true);
+                            const { error } = await supabase
+                              .from('profiles')
+                              .update({ first_name: editFirstName.trim(), last_name: editLastName.trim() })
+                              .eq('id', user.id);
+                            setProfileSaving(false);
+                            if (error) {
+                              alert('Fehler beim Speichern: ' + error.message);
+                            } else {
+                              setEditingProfile(false);
+                              setProfileSaved(true);
+                              setTimeout(() => setProfileSaved(false), 2000);
+                            }
+                          }}
+                          disabled={profileSaving}
+                          className="bg-swiss-red hover:bg-swiss-red-dark text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                        >
+                          {profileSaving ? 'Speichern...' : 'Speichern'}
+                        </button>
+                        <button
+                          onClick={() => setEditingProfile(false)}
+                          disabled={profileSaving}
+                          className="text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          Abbrechen
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-16 h-16 bg-swiss-red rounded-full flex items-center justify-center text-white text-xl font-bold">
+                        {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
+                        <p className="text-gray-500">{user.email}</p>
+                        {profileSaved && (
+                          <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Profil gespeichert
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-6">

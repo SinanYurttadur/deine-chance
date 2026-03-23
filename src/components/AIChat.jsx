@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Send, Loader2, AlertCircle, Bot, User } from 'lucide-react';
+import { Send, Loader2, AlertCircle, Bot, User, RotateCcw } from 'lucide-react';
 
 const WELCOME_MESSAGE = {
   role: 'assistant',
   content: 'Grüezi! Ich bin Alpi, dein persönlicher Auswanderer-Berater. Ich begleite dich Schritt für Schritt auf deinem Weg in die Schweiz – von der ersten Idee bis zum Ankommen. Stell mir jede Frage zu Jobsuche, Bewilligungen, Wohnung, Versicherungen, Steuern und mehr. Zusammen erstellen wir deinen individuellen Plan!',
 };
+
+const CHAT_STORAGE_KEY = 'deinechance_chat_history';
 
 const QUICK_QUESTIONS = [
   'Wo fange ich an?',
@@ -17,12 +19,32 @@ const QUICK_QUESTIONS = [
 
 const AIChat = () => {
   const { getAccessToken } = useAuth();
-  const [messages, setMessages] = useState([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [WELCOME_MESSAGE];
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Persist chat history to localStorage
+  useEffect(() => {
+    if (messages.length > 1) {
+      try {
+        // Keep only last 50 messages to avoid localStorage bloat
+        const toSave = messages.slice(-50);
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(toSave));
+      } catch {}
+    }
+  }, [messages]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -102,13 +124,26 @@ const AIChat = () => {
         <div className="w-9 h-9 bg-gradient-to-br from-swiss-red to-red-600 rounded-full flex items-center justify-center shadow-sm">
           <span className="text-base">🏔️</span>
         </div>
-        <div>
+        <div className="flex-1">
           <h3 className="font-semibold text-gray-900 text-sm">Alpi – Dein Auswanderer-Berater</h3>
           <p className="text-xs text-green-600 flex items-center gap-1">
             <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
             Immer für dich da
           </p>
         </div>
+        {messages.length > 1 && (
+          <button
+            onClick={() => {
+              localStorage.removeItem(CHAT_STORAGE_KEY);
+              setMessages([WELCOME_MESSAGE]);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-swiss-red bg-white hover:bg-red-50 border border-gray-200 rounded-lg transition-colors"
+            title="Neues Gespräch starten"
+          >
+            <RotateCcw className="w-3 h-3" />
+            Neues Gespräch
+          </button>
+        )}
       </div>
 
       {/* Messages */}

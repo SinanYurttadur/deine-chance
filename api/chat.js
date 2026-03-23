@@ -1,6 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 
+// Simple in-memory rate limiter (per warm instance)
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX = 10; // max 10 requests per minute per user
+
 const SYSTEM_PROMPT = `Du bist ein freundlicher und kompetenter KI-Assistent von "Deine Chance e.V." – einem Verein, der deutschsprachige Menschen bei der Auswanderung in die Schweiz unterstützt.
 
 Deine Aufgabe:
@@ -60,6 +65,32 @@ export default async function handler(req, res) {
 
     if (authError || !user) {
       return res.status(401).json({ error: 'Sitzung ungültig. Bitte erneut anmelden.' });
+    }
+
+    // Rate limiting
+    const now = Date.now();
+    const userKey = user.id;
+    const userRate = rateLimitMap.get(userKey) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW };
+
+    if (now > userRate.resetAt) {
+      // Window expired, reset
+      userRate.count = 1;
+      userRate.resetAt = now + RATE_LIMIT_WINDOW;
+    } else {
+      userRate.count++;
+    }
+
+    rateLimitMap.set(userKey, userRate);
+
+    if (userRate.count > RATE_LIMIT_MAX) {
+      return res.status(429).json({ error: 'Zu viele Anfragen. Bitte warte eine Minute.' });
+    }
+
+    // Clean up old entries every ~100 requests
+    if (rateLimitMap.size > 100) {
+      for (const [key, val] of rateLimitMap) {
+        if (now > val.resetAt) rateLimitMap.delete(key);
+      }
     }
 
     // Parse messages

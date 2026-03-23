@@ -131,7 +131,7 @@ const Welcome = () => {
     doc.setTextColor(220, 38, 38);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Mitgliedsnummer: ${user.certificateNumber || user.certificate_number || 'DC-2025-XXXXX'}`, width / 2, 152, { align: 'center' });
+    doc.text(`Mitgliedsnummer: ${user.certificateNumber || user.certificate_number || 'Wird generiert'}`, width / 2, 152, { align: 'center' });
 
     // Datum
     const memberSince = user.accessGrantedAt || user.access_granted_at || user.paid_at || new Date().toISOString();
