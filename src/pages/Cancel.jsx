@@ -24,6 +24,7 @@ const Cancel = () => {
   const [confirmed, setConfirmed] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCancelled, setIsCancelled] = useState(false);
+  const [cancelError, setCancelError] = useState('');
 
   const cancellationReasons = [
     { id: 'found_job', label: 'Ich habe einen Job in der Schweiz gefunden' },
@@ -43,6 +44,7 @@ const Cancel = () => {
 
   const handleCancelMembership = async () => {
     setIsProcessing(true);
+    setCancelError('');
 
     const selectedReason = reason === 'other' ? otherReason : reason;
     const result = await cancelMembership(selectedReason);
@@ -51,6 +53,8 @@ const Cancel = () => {
 
     if (result.success) {
       setIsCancelled(true);
+    } else {
+      setCancelError(result.error || 'Die Kündigung konnte nicht durchgeführt werden. Bitte versuche es erneut oder kontaktiere uns unter deinechance@mail.de');
     }
   };
 
@@ -249,6 +253,12 @@ const Cancel = () => {
                 Nach Ablauf verliere ich den Zugang zur Plattform, Community und allen Inhalten.
               </span>
             </label>
+
+            {cancelError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 mb-4">
+                {cancelError}
+              </div>
+            )}
 
             <div className="flex gap-4">
               <button

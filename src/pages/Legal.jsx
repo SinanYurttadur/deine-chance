@@ -209,10 +209,19 @@ const Legal = () => {
               </div>
             </div>
 
-            <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">Vertreten durch:</h2>
+            <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">Registereintrag:</h2>
+            <div className="bg-gray-50 rounded-xl p-6 mb-6">
+              <p className="text-gray-600">Eingetragen im Vereinsregister des Amtsgerichts Stuttgart</p>
+              <p className="text-gray-900 font-semibold">Registernummer: VR 727463</p>
+              <p className="text-gray-600 text-sm mt-2">Satzung vom 11.05.2025, zuletzt geändert durch Beschluss vom 15.10.2025</p>
+              <p className="text-gray-600 text-sm">Tag der letzten Eintragung: 09.12.2025</p>
+            </div>
+
+            <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">Vertretungsberechtigter Vorstand:</h2>
+            <p className="text-gray-600 mb-2">Jedes Vorstandsmitglied vertritt einzeln.</p>
             <ul className="list-none text-gray-600 space-y-1 mb-4">
-              <li>1. Vorsitzender: Theodoros Ioannidis</li>
-              <li>2. Vorsitzender: Sinan Yurttadur</li>
+              <li>Theodoros Ioannidis (1. Vorsitzender)</li>
+              <li>Sinan Yurttadur (2. Vorsitzender)</li>
             </ul>
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">Kontakt:</h2>
@@ -293,8 +302,9 @@ const Legal = () => {
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">5. Cookies & Tracking</h2>
             <p className="text-gray-600 mb-4">
-              Unsere Website verwendet technisch notwendige Cookies. Analyse- oder Marketingtools setzen wir nur mit
-              Ihrer Einwilligung (Cookie-Banner).
+              Unsere Website verwendet ausschließlich technisch notwendige Cookies für die Authentifizierung
+              und Funktionalität der Plattform (z. B. Sitzungsverwaltung). Analyse- oder Marketing-Cookies
+              werden nicht eingesetzt. Eine gesonderte Einwilligung ist daher nicht erforderlich.
             </p>
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">6. Weitergabe von Daten</h2>
@@ -303,7 +313,22 @@ const Legal = () => {
               zur Vertragsdurchführung erforderlich (z. B. Zahlungsanbieter, IT-Dienstleister).
             </p>
 
-            <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">7. Ihre Rechte</h2>
+            <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">7. Speicherdauer und Löschung</h2>
+            <p className="text-gray-600 mb-4">
+              Personenbezogene Daten werden nur so lange gespeichert, wie es für den jeweiligen Zweck erforderlich ist:
+            </p>
+            <ul className="list-disc list-inside text-gray-600 space-y-1 mb-4">
+              <li>Mitgliedsdaten: Für die Dauer der Mitgliedschaft und bis zu 6 Monate nach Beendigung</li>
+              <li>Zahlungsdaten: Gemäß handels- und steuerrechtlichen Aufbewahrungsfristen (bis zu 10 Jahre)</li>
+              <li>Kontaktanfragen: 6 Monate nach Abschluss der Anfrage</li>
+              <li>Server-Logdaten: Maximal 30 Tage</li>
+            </ul>
+            <p className="text-gray-600 mb-4">
+              Nach Ablauf der jeweiligen Frist werden Ihre Daten gelöscht oder anonymisiert, sofern keine gesetzlichen
+              Aufbewahrungspflichten entgegenstehen.
+            </p>
+
+            <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">8. Ihre Rechte</h2>
             <p className="text-gray-600 mb-2">Sie haben das Recht auf:</p>
             <ul className="list-disc list-inside text-gray-600 space-y-1 mb-4">
               <li>Auskunft über Ihre Daten (Art. 15 DSGVO)</li>
@@ -314,13 +339,13 @@ const Legal = () => {
               <li>Datenübertragbarkeit (Art. 20 DSGVO)</li>
             </ul>
 
-            <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">8. Aufsichtsbehörde</h2>
+            <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">9. Aufsichtsbehörde</h2>
             <p className="text-gray-600 mb-4">
               Sie haben das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren. In der Regel ist dies
               die für Ihren Wohnsitz zuständige Behörde.
             </p>
 
-            <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">9. Aktualität und Änderung</h2>
+            <h2 className="text-xl font-bold text-gray-900 mt-8 mb-4">10. Aktualität und Änderung</h2>
             <p className="text-gray-600 mb-4">
               Diese Datenschutzerklärung ist aktuell gültig (01.05.2025) und wird bei Bedarf aktualisiert.
             </p>

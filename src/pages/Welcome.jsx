@@ -60,94 +60,98 @@ const Welcome = () => {
 
   // Zertifikat als PDF herunterladen
   const downloadCertificate = () => {
-    const doc = new jsPDF({
-      orientation: 'landscape',
-      unit: 'mm',
-      format: 'a4'
-    });
+    try {
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
 
-    const width = doc.internal.pageSize.getWidth();
-    const height = doc.internal.pageSize.getHeight();
+      const width = doc.internal.pageSize.getWidth();
+      const height = doc.internal.pageSize.getHeight();
 
-    // Hintergrund
-    doc.setFillColor(255, 255, 255);
-    doc.rect(0, 0, width, height, 'F');
+      // Hintergrund
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, width, height, 'F');
 
-    // Roter Rahmen
-    doc.setDrawColor(220, 38, 38);
-    doc.setLineWidth(3);
-    doc.rect(10, 10, width - 20, height - 20);
+      // Roter Rahmen
+      doc.setDrawColor(220, 38, 38);
+      doc.setLineWidth(3);
+      doc.rect(10, 10, width - 20, height - 20);
 
-    // Innerer Rahmen
-    doc.setDrawColor(220, 38, 38);
-    doc.setLineWidth(0.5);
-    doc.rect(15, 15, width - 30, height - 30);
+      // Innerer Rahmen
+      doc.setDrawColor(220, 38, 38);
+      doc.setLineWidth(0.5);
+      doc.rect(15, 15, width - 30, height - 30);
 
-    // Logo/Badge - Schweizer Flagge
-    doc.setFillColor(220, 38, 38);
-    doc.roundedRect(width / 2 - 15, 25, 30, 30, 3, 3, 'F');
-    // Weißes Kreuz
-    doc.setFillColor(255, 255, 255);
-    doc.rect(width / 2 - 2.5, 30, 5, 20, 'F');
-    doc.rect(width / 2 - 10, 37.5, 20, 5, 'F');
+      // Logo/Badge - Schweizer Flagge
+      doc.setFillColor(220, 38, 38);
+      doc.roundedRect(width / 2 - 15, 25, 30, 30, 3, 3, 'F');
+      // Weißes Kreuz
+      doc.setFillColor(255, 255, 255);
+      doc.rect(width / 2 - 2.5, 30, 5, 20, 'F');
+      doc.rect(width / 2 - 10, 37.5, 20, 5, 'F');
 
-    // Titel
-    doc.setTextColor(220, 38, 38);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'normal');
-    doc.text('DEINE CHANCE E.V.', width / 2, 65, { align: 'center' });
+      // Titel
+      doc.setTextColor(220, 38, 38);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'normal');
+      doc.text('DEINE CHANCE E.V.', width / 2, 65, { align: 'center' });
 
-    // Zertifikat Titel
-    doc.setTextColor(30, 30, 30);
-    doc.setFontSize(32);
-    doc.setFont('helvetica', 'bold');
-    doc.text('MITGLIEDSCHAFTSZERTIFIKAT', width / 2, 85, { align: 'center' });
+      // Zertifikat Titel
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(32);
+      doc.setFont('helvetica', 'bold');
+      doc.text('MITGLIEDSCHAFTSZERTIFIKAT', width / 2, 85, { align: 'center' });
 
-    // Linie
-    doc.setDrawColor(220, 38, 38);
-    doc.setLineWidth(1);
-    doc.line(width / 2 - 60, 92, width / 2 + 60, 92);
+      // Linie
+      doc.setDrawColor(220, 38, 38);
+      doc.setLineWidth(1);
+      doc.line(width / 2 - 60, 92, width / 2 + 60, 92);
 
-    // Text
-    doc.setTextColor(80, 80, 80);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Hiermit bestätigen wir, dass', width / 2, 108, { align: 'center' });
+      // Text
+      doc.setTextColor(80, 80, 80);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Hiermit bestätigen wir, dass', width / 2, 108, { align: 'center' });
 
-    // Name
-    doc.setTextColor(30, 30, 30);
-    doc.setFontSize(28);
-    doc.setFont('helvetica', 'bold');
-    const fullName = `${user.firstName || user.first_name || ''} ${user.lastName || user.last_name || ''}`;
-    doc.text(fullName, width / 2, 125, { align: 'center' });
+      // Name
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(28);
+      doc.setFont('helvetica', 'bold');
+      const fullName = `${user.firstName || user.first_name || ''} ${user.lastName || user.last_name || ''}`;
+      doc.text(fullName, width / 2, 125, { align: 'center' });
 
-    // Mitglied Text
-    doc.setTextColor(80, 80, 80);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text('ordentliches Mitglied des Vereins Deine Chance e.V. ist.', width / 2, 138, { align: 'center' });
+      // Mitglied Text
+      doc.setTextColor(80, 80, 80);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('ordentliches Mitglied des Vereins Deine Chance e.V. ist.', width / 2, 138, { align: 'center' });
 
-    // Mitgliedsnummer
-    doc.setTextColor(220, 38, 38);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Mitgliedsnummer: ${user.certificateNumber || user.certificate_number || 'Wird generiert'}`, width / 2, 152, { align: 'center' });
+      // Mitgliedsnummer
+      doc.setTextColor(220, 38, 38);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Mitgliedsnummer: ${user.certificateNumber || user.certificate_number || 'Wird generiert'}`, width / 2, 152, { align: 'center' });
 
-    // Datum
-    const memberSince = user.accessGrantedAt || user.access_granted_at || user.paid_at || new Date().toISOString();
-    const dateStr = new Date(memberSince).toLocaleDateString('de-DE', { year: 'numeric', month: 'long', day: 'numeric' });
-    doc.setTextColor(80, 80, 80);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Mitglied seit: ${dateStr}`, width / 2, 162, { align: 'center' });
+      // Datum
+      const memberSince = user.accessGrantedAt || user.access_granted_at || user.paid_at || new Date().toISOString();
+      const dateStr = new Date(memberSince).toLocaleDateString('de-DE', { year: 'numeric', month: 'long', day: 'numeric' });
+      doc.setTextColor(80, 80, 80);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Mitglied seit: ${dateStr}`, width / 2, 162, { align: 'center' });
 
-    // Standorte
-    doc.setFontSize(9);
-    doc.setTextColor(150, 150, 150);
-    doc.text('Stuttgart, Deutschland  •  Zürich, Schweiz', width / 2, height - 25, { align: 'center' });
+      // Standorte
+      doc.setFontSize(9);
+      doc.setTextColor(150, 150, 150);
+      doc.text('Stuttgart, Deutschland  •  Zürich, Schweiz', width / 2, height - 25, { align: 'center' });
 
-    // PDF speichern
-    doc.save(`Zertifikat_${user.firstName || user.first_name}_${user.lastName || user.last_name}_DeineChance.pdf`);
+      // PDF speichern
+      doc.save(`Zertifikat_${user.firstName || user.first_name}_${user.lastName || user.last_name}_DeineChance.pdf`);
+    } catch {
+      alert('Zertifikat konnte nicht erstellt werden. Bitte versuche es erneut.');
+    }
   };
 
   // Formatiere Datum sicher

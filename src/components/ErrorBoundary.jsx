@@ -4,11 +4,28 @@ import { AlertTriangle } from 'lucide-react';
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    // Log error for debugging (future: send to Sentry/LogRocket)
+    if (typeof window !== 'undefined') {
+      try {
+        const errorLog = {
+          message: error?.message,
+          stack: error?.stack?.slice(0, 500),
+          componentStack: errorInfo?.componentStack?.slice(0, 500),
+          timestamp: new Date().toISOString(),
+          url: window.location.href,
+        };
+        // Store last error in sessionStorage for debugging
+        sessionStorage.setItem('deinechance_last_error', JSON.stringify(errorLog));
+      } catch {}
+    }
   }
 
   render() {
@@ -31,6 +48,9 @@ class ErrorBoundary extends Component {
             >
               Seite neu laden
             </button>
+            <p className="text-xs text-gray-400 mt-4">
+              Wenn das Problem weiterhin besteht, kontaktiere uns unter deinechance@mail.de
+            </p>
           </div>
         </div>
       );

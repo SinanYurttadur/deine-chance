@@ -35,6 +35,7 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
+import CookieBanner from './components/CookieBanner';
 
 // Loading fallback
 const PageLoader = () => (
@@ -147,6 +148,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
+        <CookieBanner />
         </Router>
       </PersonaProvider>
     </AuthProvider>
