@@ -90,7 +90,6 @@ const Checkout = () => {
       const contentType = response.headers.get('content-type') || '';
       if (!contentType.includes('application/json')) {
         const text = await response.text();
-        console.error('Checkout API: Nicht-JSON Antwort:', response.status, text.slice(0, 200));
         throw new Error(`Server-Fehler (${response.status}). Bitte versuche es später erneut.`);
       }
 
@@ -101,7 +100,6 @@ const Checkout = () => {
       }
 
       if (!response.ok) {
-        console.error('Checkout API Fehler:', response.status, data);
         throw new Error(data?.error || `Checkout fehlgeschlagen (${response.status}).`);
       }
 
@@ -111,7 +109,6 @@ const Checkout = () => {
 
       window.location.href = data.url;
     } catch (err) {
-      console.error('Checkout Fehler:', err);
       setError(err.message || 'Ein unerwarteter Fehler ist aufgetreten.');
       setIsProcessing(false);
     }

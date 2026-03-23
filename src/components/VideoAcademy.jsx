@@ -21,9 +21,13 @@ const allSteps = [
 
 const VideoAcademy = () => {
   const [currentStep, setCurrentStep] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const parsed = saved ? parseInt(saved, 10) : 0;
-    return parsed >= 0 && parsed < allSteps.length ? parsed : 0;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const parsed = saved ? parseInt(saved, 10) : 0;
+      return parsed >= 0 && parsed < allSteps.length ? parsed : 0;
+    } catch {
+      return 0;
+    }
   });
 
   const [watchedVideos, setWatchedVideos] = useState(() => {
@@ -34,11 +38,15 @@ const VideoAcademy = () => {
   });
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, currentStep.toString());
+    try {
+      localStorage.setItem(STORAGE_KEY, currentStep.toString());
+    } catch { /* storage full or unavailable */ }
   }, [currentStep]);
 
   useEffect(() => {
-    localStorage.setItem(WATCHED_KEY, JSON.stringify(watchedVideos));
+    try {
+      localStorage.setItem(WATCHED_KEY, JSON.stringify(watchedVideos));
+    } catch { /* storage full or unavailable */ }
   }, [watchedVideos]);
 
   const step = allSteps[currentStep];

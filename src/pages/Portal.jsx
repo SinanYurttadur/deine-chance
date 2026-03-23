@@ -357,6 +357,7 @@ const Portal = () => {
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+                aria-label="Menü öffnen"
               >
                 <Menu className="w-6 h-6" />
               </button>

@@ -33,6 +33,11 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  // CSRF: Reject requests from unknown origins
+  if (!allowedOrigins.includes(origin) && origin !== '') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

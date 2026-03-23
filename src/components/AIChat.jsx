@@ -134,7 +134,7 @@ const AIChat = () => {
         {messages.length > 1 && (
           <button
             onClick={() => {
-              localStorage.removeItem(CHAT_STORAGE_KEY);
+              try { localStorage.removeItem(CHAT_STORAGE_KEY); } catch { /* ignore */ }
               setMessages([WELCOME_MESSAGE]);
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-swiss-red bg-white hover:bg-red-50 border border-gray-200 rounded-lg transition-colors"
@@ -232,6 +232,7 @@ const AIChat = () => {
             onClick={() => sendMessage(null)}
             disabled={!input.trim() || isLoading}
             className="bg-swiss-red hover:bg-swiss-red-dark disabled:bg-gray-300 text-white p-2.5 rounded-xl transition-colors flex-shrink-0"
+            aria-label="Nachricht senden"
           >
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />

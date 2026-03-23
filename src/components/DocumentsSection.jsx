@@ -44,6 +44,16 @@ const DocumentsSection = ({ setActiveTab }) => {
     localStorage.setItem('deinechance_doc_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setViewTemplate(null);
+    };
+    if (viewTemplate) {
+      document.addEventListener('keydown', handleEsc);
+      return () => document.removeEventListener('keydown', handleEsc);
+    }
+  }, [viewTemplate]);
+
   const toggleFavorite = (templateId) => {
     setFavorites(prev =>
       prev.includes(templateId)
@@ -65,19 +75,11 @@ const DocumentsSection = ({ setActiveTab }) => {
   const copyContent = async (content) => {
     try {
       await navigator.clipboard.writeText(content);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback
-      const ta = document.createElement('textarea');
-      ta.value = content;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // Silently fail if clipboard API not available
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   // Filter templates by active category, search text, and favorites
@@ -248,7 +250,7 @@ const DocumentsSection = ({ setActiveTab }) => {
                 </div>
                 <h2 className="font-bold text-gray-900">{viewTemplate.name}</h2>
               </div>
-              <button onClick={() => setViewTemplate(null)} className="p-2 hover:bg-gray-100 rounded-lg">
+              <button onClick={() => setViewTemplate(null)} className="p-2 hover:bg-gray-100 rounded-lg" aria-label="Schließen">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>

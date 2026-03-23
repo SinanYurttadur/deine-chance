@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Calculator,
@@ -37,7 +37,9 @@ const INDUSTRIES = [
   { id: 'other', name: 'Andere Branche', multiplier: 1.55, avgCH: 80000 }
 ];
 
-// Vereinfachte Steuerberechnung
+// Vereinfachte Steuerberechnung (Landing Page Schnellrechner).
+// Hinweis: Die detaillierte Version in SalaryCalculator.jsx (Portal) verwendet
+// exakte Sozialabgaben, Einkommensteuer und kantonale Quellensteuer.
 const calculateNet = (gross, country) => {
   if (country === 'de') {
     // Deutschland: ~40% Abgaben (Steuern + Sozialabgaben)
@@ -62,6 +64,16 @@ const SalaryCalculatorCompact = () => {
   const [showModal, setShowModal] = useState(false);
 
   const selectedIndustry = INDUSTRIES.find(i => i.id === industry);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setShowModal(false);
+    };
+    if (showModal) {
+      document.addEventListener('keydown', handleEsc);
+      return () => document.removeEventListener('keydown', handleEsc);
+    }
+  }, [showModal]);
 
   // Berechnung
   const calculation = useMemo(() => {
@@ -254,6 +266,7 @@ const SalaryCalculatorCompact = () => {
               <button
                 onClick={() => setShowModal(false)}
                 className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
+                aria-label="Schließen"
               >
                 <X className="w-5 h-5" />
               </button>
