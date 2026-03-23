@@ -31,49 +31,49 @@ const Testimonials = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Testimonial Card */}
-          <div className="relative">
+          <div className="relative overflow-hidden">
             {/* Decorative background */}
-            <div className="absolute -top-6 -left-6 w-24 h-24 bg-swiss-red/10 rounded-full blur-2xl"></div>
-            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-yellow-100 rounded-full blur-2xl"></div>
+            <div className="absolute -top-6 -left-6 w-24 h-24 bg-swiss-red/10 rounded-full blur-2xl hidden sm:block"></div>
+            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-yellow-100 rounded-full blur-2xl hidden sm:block"></div>
 
-            <div className="relative bg-gradient-to-br from-gray-50 to-white rounded-3xl p-8 md:p-10 shadow-xl border border-gray-100">
+            <div className="relative bg-gradient-to-br from-gray-50 to-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 shadow-xl border border-gray-100">
               {/* Quote Icon */}
-              <div className="absolute -top-4 -left-4 w-12 h-12 bg-swiss-red rounded-full flex items-center justify-center shadow-lg">
-                <Quote className="w-6 h-6 text-white" />
+              <div className="absolute -top-3 -left-3 sm:-top-4 sm:-left-4 w-9 h-9 sm:w-12 sm:h-12 bg-swiss-red rounded-full flex items-center justify-center shadow-lg">
+                <Quote className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
               </div>
 
               {/* Stars */}
-              <div className="flex gap-1 mb-6">
+              <div className="flex gap-1 mb-4 sm:mb-6">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className="w-6 h-6 text-yellow-400 fill-yellow-400"
+                    className="w-4 h-4 sm:w-6 sm:h-6 text-yellow-400 fill-yellow-400"
                   />
                 ))}
               </div>
 
               {/* Testimonial Text */}
-              <blockquote className="text-lg md:text-xl text-gray-700 leading-relaxed mb-8 italic">
+              <blockquote className="text-sm sm:text-lg md:text-xl text-gray-700 leading-relaxed mb-6 sm:mb-8 italic">
                 "{testimonial.text}"
               </blockquote>
 
               {/* Author */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
                 {/* Avatar Placeholder */}
-                <div className="w-14 h-14 bg-gradient-to-br from-swiss-red to-red-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-swiss-red to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-xl">
                   {testimonial.name.split(' ').map(n => n[0]).join('')}
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">{testimonial.name}</p>
-                  <p className="text-swiss-red font-medium">{testimonial.role}</p>
-                  <p className="text-sm text-gray-500">{testimonial.location}</p>
+                  <p className="font-semibold text-gray-900 text-sm sm:text-base">{testimonial.name}</p>
+                  <p className="text-swiss-red font-medium text-xs sm:text-base">{testimonial.role}</p>
+                  <p className="text-xs sm:text-sm text-gray-500">{testimonial.location}</p>
                 </div>
               </div>
 
               {/* Verified Badge */}
-              <div className="absolute bottom-6 right-6">
-                <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-sm">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="mt-4 sm:mt-0 sm:absolute sm:bottom-6 sm:right-6">
+                <div className="flex items-center gap-1.5 sm:gap-2 bg-green-50 text-green-700 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm w-fit">
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                   <span>Verifiziertes Mitglied</span>
