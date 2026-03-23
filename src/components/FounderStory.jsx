@@ -52,7 +52,7 @@ const FounderStory = () => {
             <span className="w-2 h-2 bg-swiss-red rounded-full animate-pulse"></span>
             <span className="text-sm font-medium text-gray-600">Die Geschichte dahinter</span>
           </div>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 tracking-tight">
             Warum ich <span className="text-swiss-red">Deine Chance e.V.</span>
             <br />gegründet habe
           </h2>
@@ -61,7 +61,7 @@ const FounderStory = () => {
         {/* Main Content - Bento Grid Style */}
         <div className="grid lg:grid-cols-12 gap-6 mb-16">
           {/* Large Founder Card */}
-          <div className="lg:col-span-5 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-[2rem] p-8 md:p-10 text-white relative overflow-hidden group">
+          <div className="lg:col-span-5 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl md:rounded-[2rem] p-5 sm:p-8 md:p-10 text-white relative overflow-hidden group">
             {/* Animated gradient orb */}
             <div className="absolute -top-20 -right-20 w-64 h-64 bg-swiss-red/30 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
             <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/20 rounded-full blur-2xl"></div>
@@ -94,7 +94,7 @@ const FounderStory = () => {
               {/* Quote */}
               <div className="relative mb-8">
                 <Quote className="absolute -top-2 -left-1 w-8 h-8 text-swiss-red/20" />
-                <p className="text-lg md:text-xl text-gray-300 leading-relaxed pl-6 font-light italic">
+                <p className="text-base md:text-xl text-gray-300 leading-relaxed pl-6 font-light italic">
                   "Die ersten 7 Jahre in der Schweiz waren die härtesten meines Lebens.
                   Mit dem richtigen Netzwerk hätte ich mir Jahre an Frustration ersparen können."
                 </p>
@@ -125,7 +125,7 @@ const FounderStory = () => {
                 <button
                   key={index}
                   onClick={() => setActiveStep(index)}
-                  className={`w-full text-left p-5 md:p-6 rounded-2xl border-2 transition-all duration-300 group ${
+                  className={`w-full text-left p-4 sm:p-5 md:p-6 rounded-2xl border-2 transition-all duration-300 group ${
                     isActive
                       ? 'bg-gray-50 border-swiss-red shadow-lg shadow-swiss-red/10'
                       : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-md'
@@ -133,8 +133,8 @@ const FounderStory = () => {
                 >
                   <div className="flex items-start gap-4">
                     {/* Icon */}
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0 shadow-lg ${isActive ? 'scale-110' : 'group-hover:scale-105'} transition-transform`}>
-                      <Icon className="w-6 h-6 text-white" />
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0 shadow-lg ${isActive ? 'scale-110' : 'group-hover:scale-105'} transition-transform`}>
+                      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
 
                     {/* Content */}
@@ -143,12 +143,12 @@ const FounderStory = () => {
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-swiss-red text-white' : 'bg-gray-100 text-gray-500'}`}>
                           {step.year}
                         </span>
-                        <h4 className={`font-bold ${isActive ? 'text-gray-900' : 'text-gray-700'}`}>
+                        <h4 className={`font-bold text-sm sm:text-base ${isActive ? 'text-gray-900' : 'text-gray-700'}`}>
                           {step.title}
                         </h4>
                       </div>
-                      <p className={`text-sm leading-relaxed transition-all duration-300 ${
-                        isActive ? 'text-gray-600 max-h-24 opacity-100' : 'text-gray-400 max-h-0 opacity-0 overflow-hidden'
+                      <p className={`text-xs sm:text-sm leading-relaxed transition-all duration-300 ${
+                        isActive ? 'text-gray-600 max-h-40 opacity-100' : 'text-gray-400 max-h-0 opacity-0 overflow-hidden'
                       }`}>
                         {step.content}
                       </p>
@@ -168,14 +168,14 @@ const FounderStory = () => {
         {/* Bottom Section - Promise + Stats */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Promise Card */}
-          <div className="bg-gradient-to-br from-swiss-red to-red-600 rounded-[2rem] p-8 md:p-10 text-white relative overflow-hidden">
+          <div className="bg-gradient-to-br from-swiss-red to-red-600 rounded-2xl md:rounded-[2rem] p-5 sm:p-8 md:p-10 text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur rounded-full px-3 py-1 text-sm font-medium mb-6">
                 <Heart className="w-4 h-4" />
                 Mein Versprechen
               </div>
-              <h3 className="text-2xl md:text-3xl font-bold mb-4 leading-tight">
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 leading-tight">
                 Du musst nicht dieselben Fehler machen wie ich.
               </h3>
               <p className="text-white/80 mb-8">
@@ -199,8 +199,8 @@ const FounderStory = () => {
               { value: '7+', label: 'Jahre', sublabel: 'Erfahrung' },
               { value: '3.000€', label: 'Ersparnis', sublabel: 'vs. Agenturen' }
             ].map((stat, i) => (
-              <div key={i} className="bg-gray-50 rounded-2xl p-6 text-center hover:bg-gray-100 transition-colors group">
-                <div className="text-3xl md:text-4xl font-bold text-gray-900 group-hover:text-swiss-red transition-colors">
+              <div key={i} className="bg-gray-50 rounded-2xl p-4 sm:p-6 text-center hover:bg-gray-100 transition-colors group">
+                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 group-hover:text-swiss-red transition-colors">
                   {stat.value}
                 </div>
                 <div className="text-sm font-semibold text-gray-700 mt-1">{stat.label}</div>
