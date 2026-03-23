@@ -37,7 +37,7 @@ const ValueGrid = () => {
             return (
               <div
                 key={index}
-                className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-swiss-red/20 hover:-translate-y-1"
+                className="group bg-white rounded-2xl p-5 sm:p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-swiss-red/20 hover:-translate-y-1"
               >
                 {/* Icon */}
                 <div className="w-14 h-14 bg-swiss-red/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-swiss-red group-hover:scale-110 transition-all duration-300">

@@ -580,7 +580,7 @@ const Portal = () => {
               </div>
 
               {/* Onboarding Progress Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { label: 'Video-Module', value: '0/8', icon: Play, change: 'Video-Akademie starten', onClick: () => setActiveTab('webinars') },
                   { label: 'Wissen', value: '0/13', icon: BookOpen, change: 'Kapitel lesen', onClick: () => setActiveTab('knowledge') },
@@ -609,7 +609,7 @@ const Portal = () => {
               </div>
 
               {/* Two Column Layout */}
-              <div className="grid lg:grid-cols-3 gap-8">
+              <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
                 {/* Quick Start Guide */}
                 <div className="lg:col-span-2 bg-white rounded-xl shadow-sm">
                   <div className="p-6 border-b border-gray-100">

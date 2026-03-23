@@ -470,8 +470,8 @@ const KnowledgeSection = ({ setActiveTab, completedChapters, markAsComplete }) =
       </div>
 
       {/* Journey Roadmap - Horizontal */}
-      <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 overflow-x-auto">
-        <div className="flex items-center gap-2 min-w-max">
+      <div className="bg-white rounded-2xl md:rounded-[2rem] p-3 sm:p-4 md:p-6 shadow-sm border border-gray-100 overflow-x-auto">
+        <div className="flex items-center gap-2 min-w-max pb-1">
           {journeyPhases.map((phase, index) => {
             const isActive = activePhase === phase.id;
             const phaseCompleted = phase.chapters.every(c => completedChapters.includes(c.id));

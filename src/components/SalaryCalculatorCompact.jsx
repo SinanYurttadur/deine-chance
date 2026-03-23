@@ -96,7 +96,7 @@ const SalaryCalculatorCompact = () => {
 
   return (
     <>
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 md:p-10 text-white overflow-hidden relative">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-4 sm:p-6 md:p-10 text-white overflow-hidden relative">
         {/* Background decoration */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-swiss-red/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-swiss-red/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
@@ -179,7 +179,7 @@ const SalaryCalculatorCompact = () => {
               {/* Schweizer Gehalt */}
               <div className="text-center md:text-left">
                 <p className="text-gray-400 text-sm mb-1">In der Schweiz verdienst du ca.</p>
-                <p className="text-3xl md:text-4xl font-bold text-white">
+                <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
                   {calculation.swissSalary.toLocaleString('de-CH')} <span className="text-lg text-gray-400">CHF</span>
                 </p>
                 <p className="text-sm text-gray-500">Bruttojahresgehalt</p>
@@ -188,7 +188,7 @@ const SalaryCalculatorCompact = () => {
               {/* Mehr pro Monat */}
               <div className="text-center border-y md:border-y-0 md:border-x border-white/10 py-4 md:py-0">
                 <p className="text-gray-400 text-sm mb-1">Mehr Geld pro Monat</p>
-                <p className={`text-3xl md:text-4xl font-bold ${calculation.isWorthIt ? 'text-green-400' : 'text-yellow-400'}`}>
+                <p className={`text-2xl sm:text-3xl md:text-4xl font-bold ${calculation.isWorthIt ? 'text-green-400' : 'text-yellow-400'}`}>
                   {calculation.monthlyDiff > 0 ? '+' : ''}{calculation.monthlyDiff.toLocaleString('de-DE')}€
                 </p>
                 <p className="text-sm text-gray-500">nach Lebenshaltungskosten</p>
@@ -197,7 +197,7 @@ const SalaryCalculatorCompact = () => {
               {/* Pro Jahr */}
               <div className="text-center md:text-right">
                 <p className="text-gray-400 text-sm mb-1">Das sind pro Jahr</p>
-                <p className={`text-3xl md:text-4xl font-bold ${calculation.isWorthIt ? 'text-green-400' : 'text-yellow-400'}`}>
+                <p className={`text-2xl sm:text-3xl md:text-4xl font-bold ${calculation.isWorthIt ? 'text-green-400' : 'text-yellow-400'}`}>
                   {calculation.yearlyDiff > 0 ? '+' : ''}{calculation.yearlyDiff.toLocaleString('de-DE')}€
                 </p>
                 <p className="text-sm text-gray-500">mehr auf dem Konto</p>
@@ -246,10 +246,10 @@ const SalaryCalculatorCompact = () => {
 
       {/* Detail Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex items-center justify-between rounded-t-3xl">
+            <div className="sticky top-0 bg-white border-b border-gray-100 p-4 sm:p-6 flex items-center justify-between rounded-t-2xl sm:rounded-t-3xl">
               <h3 className="text-xl font-bold text-gray-900">Detaillierte Berechnung</h3>
               <button
                 onClick={() => setShowModal(false)}
@@ -260,9 +260,9 @@ const SalaryCalculatorCompact = () => {
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6">
               {/* Vergleichstabelle */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Deutschland */}
                 <div className="bg-gray-50 rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-4">
@@ -311,7 +311,7 @@ const SalaryCalculatorCompact = () => {
               {/* Lebenshaltungskosten */}
               <div>
                 <h4 className="font-bold text-gray-900 mb-4">Lebenshaltungskosten (monatlich)</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-gray-500 mb-3">🇩🇪 Deutschland</p>
                     {[

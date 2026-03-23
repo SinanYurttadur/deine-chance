@@ -38,7 +38,7 @@ const LeadForm = () => {
               </div>
 
               {/* What you get vs don't */}
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
                 <div>
                   <p className="text-xs font-semibold text-green-600 mb-2">Bei uns:</p>
                   <div className="space-y-1">
@@ -100,7 +100,7 @@ const LeadForm = () => {
             {/* Decorative elements */}
             <div className="absolute -top-8 -right-8 w-48 h-48 bg-swiss-red/10 rounded-full blur-3xl"></div>
 
-            <div className="relative bg-white rounded-3xl shadow-2xl p-8 md:p-10 border border-gray-100">
+            <div className="relative bg-white rounded-3xl shadow-2xl p-5 sm:p-8 md:p-10 border border-gray-100">
               <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-swiss-red rounded-2xl flex items-center justify-center mx-auto mb-4 relative">
                   {/* Schweizer Kreuz */}

@@ -51,10 +51,10 @@ const Network = () => {
             <div className="bg-gradient-to-br from-swiss-red/5 to-rose-100 rounded-3xl p-8 md:p-12">
               {/* Central Icon */}
               <div className="relative flex items-center justify-center">
-                <div className="absolute w-64 h-64 bg-swiss-red/10 rounded-full animate-pulse"></div>
-                <div className="absolute w-48 h-48 bg-swiss-red/20 rounded-full"></div>
-                <div className="relative w-32 h-32 bg-gradient-to-br from-swiss-red to-red-600 rounded-full flex items-center justify-center shadow-xl">
-                  <Heart className="w-16 h-16 text-white" />
+                <div className="absolute w-48 h-48 sm:w-64 sm:h-64 bg-swiss-red/10 rounded-full animate-pulse"></div>
+                <div className="absolute w-36 h-36 sm:w-48 sm:h-48 bg-swiss-red/20 rounded-full"></div>
+                <div className="relative w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-swiss-red to-red-600 rounded-full flex items-center justify-center shadow-xl">
+                  <Heart className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
                 </div>
 
                 {/* Floating avatars around */}

@@ -96,7 +96,7 @@ const AIChat = () => {
   };
 
   return (
-    <div className="flex flex-col h-[600px] bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-200px)] sm:h-[500px] md:h-[600px] max-h-[600px] bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       {/* Chat Header */}
       <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gray-50">
         <div className="w-9 h-9 bg-gradient-to-br from-swiss-red to-red-600 rounded-full flex items-center justify-center shadow-sm">

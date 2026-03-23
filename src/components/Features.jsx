@@ -24,7 +24,7 @@ const Features = () => {
 
         {/* Features List */}
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12">
+          <div className="bg-white rounded-3xl shadow-xl p-4 sm:p-6 md:p-12">
             <div className="grid md:grid-cols-2 gap-5">
               {content.features.items.map((feature, index) => (
                 <div
